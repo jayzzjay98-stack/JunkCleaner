@@ -6,7 +6,6 @@ struct ContentView: View {
     @Bindable var scanner: JunkScanner
     @Bindable var cleaner: JunkCleaner
 
-    @State private var selectedTab: NavTab = .scan
     @State private var showResult = false
     @State private var resultTimer: Timer?
 
@@ -16,18 +15,14 @@ struct ContentView: View {
 
             VStack(spacing: 0) {
                 TitleBar(scanner: scanner)
-                HStack(spacing: 0) {
-                    SidebarView()
-                    Divider().background(DS.borderSubtle)
-                    MainContentView(
-                        scanner: scanner,
-                        cleaner: cleaner,
-                        showResult: $showResult
-                    )
-                }
+                MainContentView(
+                    scanner: scanner,
+                    cleaner: cleaner,
+                    showResult: $showResult
+                )
             }
         }
-        .frame(width: 420, height: 690)
+        .frame(width: 480, height: 660)
         .clipShape(RoundedRectangle(cornerRadius: DS.radiusApp))
         .overlay(
             RoundedRectangle(cornerRadius: DS.radiusApp)
@@ -52,23 +47,4 @@ struct ContentView: View {
                 .requestAuthorization(options: [.alert, .sound]) { _, _ in }
         }
     }
-}
-
-// MARK: - Navigation Tab
-enum NavTab: CaseIterable {
-    case scan, settings
-
-    var icon: String {
-        switch self {
-        case .scan:     return "magnifyingglass"
-        case .settings: return "gearshape.fill"
-        }
-    }
-    var label: String {
-        switch self {
-        case .scan:     return "Smart Scan"
-        case .settings: return "Settings"
-        }
-    }
-    var hasBadge: Bool { false }
 }
