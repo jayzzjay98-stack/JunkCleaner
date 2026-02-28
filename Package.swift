@@ -7,8 +7,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "JunkCleaner",
-            path: "Sources/JunkCleaner",
-            resources: [.copy("../../AppIcon.icns")]
+            path: "Sources/JunkCleaner"
         )
     ]
 )

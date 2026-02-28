@@ -17,13 +17,12 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 TitleBar(scanner: scanner)
                 HStack(spacing: 0) {
-                    SidebarView(selectedTab: $selectedTab)
+                    SidebarView()
                     Divider().background(DS.borderSubtle)
                     MainContentView(
                         scanner: scanner,
                         cleaner: cleaner,
-                        showResult: $showResult,
-                        selectedTab: selectedTab
+                        showResult: $showResult
                     )
                 }
             }

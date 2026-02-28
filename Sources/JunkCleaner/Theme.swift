@@ -1,51 +1,84 @@
 import SwiftUI
 
-// MARK: - Theme
 
-public struct AppTheme {
-    public let name: String
-    public let accent: Color
-    public let accentDim: Color
-    public let bgColor: Color
-    public let borderColor: Color
+
+// MARK: - Design Tokens (matching HTML exactly)
+enum T {
+    // Background gradient: #0f172a → #1e1b4b → #312e81
+    static let bg0 = Color(hex: "#0f172a")
+    static let bg1 = Color(hex: "#1e1b4b")
+    static let bg2 = Color(hex: "#312e81")
+
+    // Primary purple
+    static let primary    = Color(hex: "#5211d4")
+    static let indigo500  = Color(hex: "#6366f1")
+    static let violet400  = Color(hex: "#a78bfa")
+    static let blue500    = Color(hex: "#3b82f6")
+    static let blue400    = Color(hex: "#60a5fa")
+
+    // Semantic
+    static let green400   = Color(hex: "#4ade80")
+    static let orange400  = Color(hex: "#fb923c")
+    static let cyan400    = Color(hex: "#22d3ee")
+    static let teal500    = Color(hex: "#14b8a6")
+    static let purple400  = Color(hex: "#c084fc")
+    static let pink500    = Color(hex: "#ec4899")
+
+    // Text
+    static let textWhite  = Color.white
+    static let textDim    = Color(hex: "#a5b4fc").opacity(0.6)   // indigo-200/60
+    static let textFaint  = Color(hex: "#a5b4fc").opacity(0.4)   // indigo-200/40
+    static let textMuted  = Color(hex: "#a5b4fc").opacity(0.5)
+    static let slate300   = Color(hex: "#cbd5e1")
+
+    // Glass surfaces (from HTML CSS)
+    static let glassBg     = Color(hex: "#1e1b4b").opacity(0.4)   // rgba(30,27,75,0.4)
+    static let glassBorder = Color.white.opacity(0.08)             // rgba(255,255,255,0.08)
+    static let glassSurface = Color.white.opacity(0.05)            // rgba(255,255,255,0.05)
+    static let glassHover  = Color.white.opacity(0.05)
+
+    // Gradients
+    static let bgGradient = LinearGradient(
+        colors: [bg0, bg1, bg2],
+        startPoint: .topLeading, endPoint: .bottomTrailing
+    )
+    static let primaryGradient = LinearGradient(
+        colors: [primary, blue500],
+        startPoint: .topLeading, endPoint: .bottomTrailing
+    )
+    static let cpuBarGradient = LinearGradient(
+        colors: [blue400, indigo500],
+        startPoint: .leading, endPoint: .trailing
+    )
+    static let memBarGradient = LinearGradient(
+        colors: [purple400, pink500],
+        startPoint: .leading, endPoint: .trailing
+    )
+    static let diskBarGradient = LinearGradient(
+        colors: [cyan400, teal500],
+        startPoint: .leading, endPoint: .trailing
+    )
+    static let glassButtonGradient = LinearGradient(
+        colors: [Color.white.opacity(0.10), Color.white.opacity(0.05)],
+        startPoint: .topLeading, endPoint: .bottomTrailing
+    )
 }
 
-public let appThemes: [AppTheme] = [
-    AppTheme(name: "AMBER",  accent: Color(red: 1.0, green: 0.55, blue: 0.0),  accentDim: Color(red: 1.0, green: 0.55, blue: 0.0).opacity(0.1), bgColor: Color(red: 0.06, green: 0.047, blue: 0.03), borderColor: Color(red: 1.0, green: 0.55, blue: 0.0).opacity(0.22)),
-    AppTheme(name: "MATRIX", accent: Color(red: 0.0, green: 1.0, blue: 0.53),  accentDim: Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.08), bgColor: Color(red: 0.027, green: 0.06, blue: 0.04), borderColor: Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.2)),
-    AppTheme(name: "ARCTIC", accent: Color(red: 0.0, green: 0.78, blue: 1.0),  accentDim: Color(red: 0.0, green: 0.78, blue: 1.0).opacity(0.08), bgColor: Color(red: 0.027, green: 0.05, blue: 0.07), borderColor: Color(red: 0.0, green: 0.78, blue: 1.0).opacity(0.22)),
-    AppTheme(name: "COSMIC", accent: Color(red: 0.66, green: 0.33, blue: 0.97), accentDim: Color(red: 0.66, green: 0.33, blue: 0.97).opacity(0.1), bgColor: Color(red: 0.047, green: 0.03, blue: 0.07), borderColor: Color(red: 0.66, green: 0.33, blue: 0.97).opacity(0.22)),
-    AppTheme(name: "ROSE",   accent: Color(red: 0.98, green: 0.44, blue: 0.52), accentDim: Color(red: 0.98, green: 0.44, blue: 0.52).opacity(0.1), bgColor: Color(red: 0.07, green: 0.03, blue: 0.06), borderColor: Color(red: 0.98, green: 0.44, blue: 0.52).opacity(0.22)),
-    AppTheme(name: "GOLD",   accent: Color(red: 0.96, green: 0.77, blue: 0.09), accentDim: Color(red: 0.96, green: 0.77, blue: 0.09).opacity(0.1), bgColor: Color(red: 0.067, green: 0.055, blue: 0.016), borderColor: Color(red: 0.96, green: 0.77, blue: 0.09).opacity(0.22)),
-    AppTheme(name: "CYAN",   accent: Color(red: 0.0, green: 0.9, blue: 0.8),   accentDim: Color(red: 0.0, green: 0.9, blue: 0.8).opacity(0.08), bgColor: Color(red: 0.02, green: 0.06, blue: 0.055), borderColor: Color(red: 0.0, green: 0.9, blue: 0.8).opacity(0.22)),
-    AppTheme(name: "LAVA",   accent: Color(red: 1.0, green: 0.23, blue: 0.36),  accentDim: Color(red: 1.0, green: 0.23, blue: 0.36).opacity(0.1), bgColor: Color(red: 0.067, green: 0.02, blue: 0.02), borderColor: Color(red: 1.0, green: 0.23, blue: 0.36).opacity(0.22)),
-    AppTheme(name: "LIME",   accent: Color(red: 0.52, green: 0.8, blue: 0.09),  accentDim: Color(red: 0.52, green: 0.8, blue: 0.09).opacity(0.1), bgColor: Color(red: 0.035, green: 0.06, blue: 0.02), borderColor: Color(red: 0.52, green: 0.8, blue: 0.09).opacity(0.22)),
-    AppTheme(name: "SILVER", accent: Color(red: 0.69, green: 0.72, blue: 0.8),  accentDim: Color(red: 0.69, green: 0.72, blue: 0.8).opacity(0.1), bgColor: Color(red: 0.05, green: 0.05, blue: 0.06), borderColor: Color(red: 0.69, green: 0.72, blue: 0.8).opacity(0.2)),
-    
-    // 25 New Themes
-    AppTheme(name: "SUN",    accent: Color(red: 1.0, green: 0.85, blue: 0.2),  accentDim: Color(red: 1.0, green: 0.85, blue: 0.2).opacity(0.1), bgColor: Color(red: 0.07, green: 0.06, blue: 0.02), borderColor: Color(red: 1.0, green: 0.85, blue: 0.2).opacity(0.22)),
-    AppTheme(name: "NIGHT",  accent: Color(red: 0.1, green: 0.3, blue: 0.8),   accentDim: Color(red: 0.1, green: 0.3, blue: 0.8).opacity(0.1), bgColor: Color(red: 0.01, green: 0.02, blue: 0.06), borderColor: Color(red: 0.1, green: 0.3, blue: 0.8).opacity(0.22)),
-    AppTheme(name: "FOREST", accent: Color(red: 0.1, green: 0.5, blue: 0.2),   accentDim: Color(red: 0.1, green: 0.5, blue: 0.2).opacity(0.1), bgColor: Color(red: 0.01, green: 0.04, blue: 0.02), borderColor: Color(red: 0.1, green: 0.5, blue: 0.2).opacity(0.22)),
-    AppTheme(name: "BERRY",  accent: Color(red: 0.8, green: 0.2, blue: 0.6),   accentDim: Color(red: 0.8, green: 0.2, blue: 0.6).opacity(0.1), bgColor: Color(red: 0.06, green: 0.01, blue: 0.04), borderColor: Color(red: 0.8, green: 0.2, blue: 0.6).opacity(0.22)),
-    AppTheme(name: "OCEAN",  accent: Color(red: 0.0, green: 0.5, blue: 1.0),   accentDim: Color(red: 0.0, green: 0.5, blue: 1.0).opacity(0.1), bgColor: Color(red: 0.01, green: 0.04, blue: 0.08), borderColor: Color(red: 0.0, green: 0.5, blue: 1.0).opacity(0.22)),
-    AppTheme(name: "MINT",   accent: Color(red: 0.2, green: 0.9, blue: 0.6),   accentDim: Color(red: 0.2, green: 0.9, blue: 0.6).opacity(0.1), bgColor: Color(red: 0.02, green: 0.07, blue: 0.05), borderColor: Color(red: 0.2, green: 0.9, blue: 0.6).opacity(0.22)),
-    AppTheme(name: "CORAL",  accent: Color(red: 1.0, green: 0.5, blue: 0.4),   accentDim: Color(red: 1.0, green: 0.5, blue: 0.4).opacity(0.1), bgColor: Color(red: 0.08, green: 0.04, blue: 0.03), borderColor: Color(red: 1.0, green: 0.5, blue: 0.4).opacity(0.22)),
-    AppTheme(name: "PEACH",  accent: Color(red: 1.0, green: 0.7, blue: 0.5),   accentDim: Color(red: 1.0, green: 0.7, blue: 0.5).opacity(0.1), bgColor: Color(red: 0.08, green: 0.05, blue: 0.04), borderColor: Color(red: 1.0, green: 0.7, blue: 0.5).opacity(0.22)),
-    AppTheme(name: "PLUM",   accent: Color(red: 0.5, green: 0.2, blue: 0.6),   accentDim: Color(red: 0.5, green: 0.2, blue: 0.6).opacity(0.1), bgColor: Color(red: 0.04, green: 0.01, blue: 0.05), borderColor: Color(red: 0.5, green: 0.2, blue: 0.6).opacity(0.22)),
-    AppTheme(name: "ONYX",   accent: Color(red: 0.4, green: 0.4, blue: 0.4),   accentDim: Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0.1), bgColor: Color(red: 0.03, green: 0.03, blue: 0.03), borderColor: Color(red: 0.4, green: 0.4, blue: 0.4).opacity(0.22)),
-    AppTheme(name: "JADE",   accent: Color(red: 0.0, green: 0.7, blue: 0.4),   accentDim: Color(red: 0.0, green: 0.7, blue: 0.4).opacity(0.1), bgColor: Color(red: 0.01, green: 0.06, blue: 0.03), borderColor: Color(red: 0.0, green: 0.7, blue: 0.4).opacity(0.22)),
-    AppTheme(name: "RUBY",   accent: Color(red: 0.9, green: 0.1, blue: 0.2),   accentDim: Color(red: 0.9, green: 0.1, blue: 0.2).opacity(0.1), bgColor: Color(red: 0.07, green: 0.01, blue: 0.02), borderColor: Color(red: 0.9, green: 0.1, blue: 0.2).opacity(0.22)),
-    AppTheme(name: "TEAL",   accent: Color(red: 0.1, green: 0.6, blue: 0.6),   accentDim: Color(red: 0.1, green: 0.6, blue: 0.6).opacity(0.1), bgColor: Color(red: 0.01, green: 0.05, blue: 0.05), borderColor: Color(red: 0.1, green: 0.6, blue: 0.6).opacity(0.22)),
-    AppTheme(name: "BONE",   accent: Color(red: 0.9, green: 0.9, blue: 0.8),   accentDim: Color(red: 0.9, green: 0.9, blue: 0.8).opacity(0.1), bgColor: Color(red: 0.07, green: 0.07, blue: 0.06), borderColor: Color(red: 0.9, green: 0.9, blue: 0.8).opacity(0.22)),
-    AppTheme(name: "IRIS",   accent: Color(red: 0.4, green: 0.3, blue: 0.9),   accentDim: Color(red: 0.4, green: 0.3, blue: 0.9).opacity(0.1), bgColor: Color(red: 0.03, green: 0.02, blue: 0.07), borderColor: Color(red: 0.4, green: 0.3, blue: 0.9).opacity(0.22)),
-    AppTheme(name: "INK",    accent: Color(red: 0.1, green: 0.1, blue: 0.3),   accentDim: Color(red: 0.1, green: 0.1, blue: 0.3).opacity(0.1), bgColor: Color(red: 0.01, green: 0.01, blue: 0.02), borderColor: Color(red: 0.1, green: 0.1, blue: 0.3).opacity(0.22)),
-    AppTheme(name: "MOSS",   accent: Color(red: 0.3, green: 0.5, blue: 0.2),   accentDim: Color(red: 0.3, green: 0.5, blue: 0.2).opacity(0.1), bgColor: Color(red: 0.02, green: 0.04, blue: 0.02), borderColor: Color(red: 0.3, green: 0.5, blue: 0.2).opacity(0.22)),
-    AppTheme(name: "SAND",   accent: Color(red: 0.8, green: 0.7, blue: 0.5),   accentDim: Color(red: 0.8, green: 0.7, blue: 0.5).opacity(0.1), bgColor: Color(red: 0.06, green: 0.05, blue: 0.04), borderColor: Color(red: 0.8, green: 0.7, blue: 0.5).opacity(0.22)),
-    AppTheme(name: "RUST",   accent: Color(red: 0.7, green: 0.3, blue: 0.1),   accentDim: Color(red: 0.7, green: 0.3, blue: 0.1).opacity(0.1), bgColor: Color(red: 0.06, green: 0.02, blue: 0.01), borderColor: Color(red: 0.7, green: 0.3, blue: 0.1).opacity(0.22)),
-    AppTheme(name: "SKY",    accent: Color(red: 0.4, green: 0.8, blue: 1.0),   accentDim: Color(red: 0.4, green: 0.8, blue: 1.0).opacity(0.1), bgColor: Color(red: 0.03, green: 0.06, blue: 0.08), borderColor: Color(red: 0.4, green: 0.8, blue: 1.0).opacity(0.22)),
-    AppTheme(name: "WINE",   accent: Color(red: 0.6, green: 0.1, blue: 0.2),   accentDim: Color(red: 0.6, green: 0.1, blue: 0.2).opacity(0.1), bgColor: Color(red: 0.05, green: 0.01, blue: 0.02), borderColor: Color(red: 0.6, green: 0.1, blue: 0.2).opacity(0.22)),
-    AppTheme(name: "FLORA",  accent: Color(red: 0.9, green: 0.5, blue: 0.8),   accentDim: Color(red: 0.9, green: 0.5, blue: 0.8).opacity(0.1), bgColor: Color(red: 0.07, green: 0.04, blue: 0.06), borderColor: Color(red: 0.9, green: 0.5, blue: 0.8).opacity(0.22)),
-    AppTheme(name: "LEAF",   accent: Color(red: 0.4, green: 0.9, blue: 0.3),   accentDim: Color(red: 0.4, green: 0.9, blue: 0.3).opacity(0.1), bgColor: Color(red: 0.03, green: 0.07, blue: 0.02), borderColor: Color(red: 0.4, green: 0.9, blue: 0.3).opacity(0.22)),
-    AppTheme(name: "DUST",   accent: Color(red: 0.6, green: 0.5, blue: 0.5),   accentDim: Color(red: 0.6, green: 0.5, blue: 0.5).opacity(0.1), bgColor: Color(red: 0.05, green: 0.04, blue: 0.04), borderColor: Color(red: 0.6, green: 0.5, blue: 0.5).opacity(0.22)),
-    AppTheme(name: "ICE",    accent: Color(red: 0.7, green: 0.9, blue: 1.0),   accentDim: Color(red: 0.7, green: 0.9, blue: 1.0).opacity(0.1), bgColor: Color(red: 0.05, green: 0.07, blue: 0.08), borderColor: Color(red: 0.7, green: 0.9, blue: 1.0).opacity(0.22)),
-]
+// MARK: - Glass Panel (matches .glass-panel in HTML)
+struct GlassPanel: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(T.glassBg)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(T.glassBorder, lineWidth: 1)
+                    )
+            )
+    }
+}
+
+extension View {
+    func glassPanel() -> some View { modifier(GlassPanel()) }
+}

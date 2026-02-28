@@ -11,7 +11,11 @@ struct JunkListSection: View {
                 if result.items.isEmpty {
                     EmptyResultState()
                 } else {
-                    SectionLabel(text: "Found Items")
+                    Text("Found Items")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(DS.textTertiary)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 8)
                     JunkItemsList(items: result.items)
                 }
             } else {
