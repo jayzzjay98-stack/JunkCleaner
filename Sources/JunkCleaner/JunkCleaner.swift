@@ -100,10 +100,10 @@ final class JunkCleaner {
         let url = URL(fileURLWithPath: path)
         guard fm.fileExists(atPath: path) else { return }
 
-        // LaunchAgent/Daemon: unload ก่อน
+        // LaunchAgent/Daemon: unload ก่อนเสมอ แล้วรอ 0.3 วินาที
         if item.type == .appLaunchAgents || item.type == .appLaunchDaemons {
             unloadLaunchItem(path: path)
-            try? await Task.sleep(nanoseconds: 200_000_000)
+            try? await Task.sleep(nanoseconds: 300_000_000)
         }
 
         // pkgutil receipt: ใช้ pkgutil --forget
@@ -115,31 +115,53 @@ final class JunkCleaner {
             return
         }
 
+        // ถ้า path ครอบคลุม /Library/, /private/, /usr/ ให้ข้าม trashItem แล้วเรียก deleteWithAdmin ทันที
+        if path.hasPrefix("/Library/") || path.hasPrefix("/private/") || path.hasPrefix("/usr/") {
+            try await deleteWithAdmin(path: path)
+            return
+        }
+
         // ลองย้ายไป Trash ก่อน (safer)
         var outURL: NSURL?
         do {
             try fm.trashItem(at: url, resultingItemURL: &outURL)
         } catch {
-            // ถ้าอยู่ใน /tmp หรือ /private → ลบตรงได้เลย
-            if path.hasPrefix("/private/tmp") || path.hasPrefix("/private/var/tmp") || path.hasPrefix(NSTemporaryDirectory()) {
-                try fm.removeItem(at: url)
-            } else {
-                // ต้องการ admin
-                try await deleteWithAdmin(path: path)
-            }
+            // ถ้า trashItem fail ให้เรียก deleteWithAdmin ทันที อย่า fallback ไป removeItem
+            try await deleteWithAdmin(path: path)
         }
     }
 
     // MARK: - Admin delete ผ่าน AppleScript
     private func deleteWithAdmin(path: String) async throws {
         let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
-        let script = "do shell script \"rm -rf '\\(escaped)'\" with administrator privileges"
-        let appleScript = NSAppleScript(source: script)
-        var errDict: NSDictionary?
-        appleScript?.executeAndReturnError(&errDict)
-        if let err = errDict {
-            let msg = err[NSAppleScript.errorMessage] as? String ?? "Admin delete failed"
-            throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: msg])
+        let script = "do shell script \"rm -rf '\(escaped)'\" with administrator privileges"
+        
+        var errorDict: NSDictionary?
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(&errorDict)
+        } else {
+            throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize AppleScript"])
+        }
+        
+        // ถ้า fail ให้ลอง retry ท่า Process() sudo rm -rf
+        if let err = errorDict {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+            p.arguments = ["rm", "-rf", path]
+            p.standardOutput = FileHandle.nullDevice
+            p.standardError = FileHandle.nullDevice
+            
+            do {
+                try p.run()
+                p.waitUntilExit()
+                if p.terminationStatus != 0 {
+                    let msg = err[NSAppleScript.errorMessage] as? String ?? "Admin delete failed"
+                    throw NSError(domain: "JunkCleaner", code: Int(p.terminationStatus), userInfo: [NSLocalizedDescriptionKey: msg])
+                }
+            } catch {
+                let msg = err[NSAppleScript.errorMessage] as? String ?? "Admin delete failed"
+                throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: msg])
+            }
         }
     }
 
