@@ -317,7 +317,7 @@ final class JunkScanner {
     // MARK: - 6. LANGUAGE PACKS
     private func scanLanguagePacks() async -> [JunkItem] {
         var junk: [JunkItem] = []
-        let preferred = Set(Locale.preferredLanguages.compactMap { Locale(identifier: $0).languageCode })
+        let preferred = Set(Locale.preferredLanguages.compactMap { Locale(identifier: $0).language.languageCode?.identifier ?? "" })
         let keep = preferred.union(["en", "Base"])
 
         for dir in ["/Applications", "\(home)/Applications"] {
@@ -344,7 +344,7 @@ final class JunkScanner {
 
         let backupsDir = "\(home)/Library/Application Support/MobileSync/Backup"
         if let backups = try? fm.contentsOfDirectory(atPath: backupsDir) {
-            var dated = backups.compactMap { b -> (String, Date)? in
+            let dated = backups.compactMap { b -> (String, Date)? in
                 let bp = "\(backupsDir)/\(b)"
                 guard let attrs = try? fm.attributesOfItem(atPath: bp),
                       let mod = attrs[.modificationDate] as? Date else { return nil }

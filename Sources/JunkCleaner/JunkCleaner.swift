@@ -52,10 +52,6 @@ final class JunkCleaner {
         }
 
         let start = Date()
-        var freed: Int64 = 0
-        var successCount = 0
-        var failCount = 0
-
         // เรียง: LaunchAgents/Daemons ก่อน (unload ก่อนลบ)
         let sorted = items.sorted {
             ($0.type == .appLaunchAgents || $0.type == .appLaunchDaemons) &&
@@ -70,14 +66,11 @@ final class JunkCleaner {
 
             do {
                 try await deleteItem(item)
-                successCount += 1
-                freed += item.sizeBytes
                 await MainActor.run {
+                    self.totalFreedBytes += item.sizeBytes
                     self.deletedItems.append(item)
-                    self.totalFreedBytes = freed
                 }
             } catch {
-                failCount += 1
                 let reason = error.localizedDescription
                 await MainActor.run {
                     self.failedItems.append((item, reason))
@@ -87,7 +80,7 @@ final class JunkCleaner {
 
         let duration = Date().timeIntervalSince(start)
         await MainActor.run {
-            self.lastResult = CleanResult(freedBytes: freed, deletedCount: successCount, failedCount: failCount, duration: duration)
+            self.lastResult = CleanResult(freedBytes: self.totalFreedBytes, deletedCount: self.deletedItems.count, failedCount: self.failedItems.count, duration: duration)
             self.isDeleting = false
             self.deleteProgress = 1.0
             self.currentDeleteTask = "Done!"

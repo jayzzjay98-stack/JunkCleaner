@@ -107,12 +107,12 @@ final class AppUninstaller {
         ]
 
         let totalSteps = Double(searchDirs.count + 3)
-        var step = 0.0
 
         for (dir, type) in searchDirs {
             guard let entries = try? fm.contentsOfDirectory(atPath: dir) else {
-                step += 1
-                await MainActor.run { self.analysisProgress = step / totalSteps }
+                await MainActor.run {
+                    self.analysisProgress += 1.0 / totalSteps
+                }
                 continue
             }
             for entry in entries {
@@ -130,8 +130,9 @@ final class AppUninstaller {
                 if size < 100 { continue }
                 allFound.append(JunkItem(type: type, path: fullPath, displayName: entry, sizeBytes: size, relatedApp: appName))
             }
-            step += 1
-            await MainActor.run { self.analysisProgress = step / totalSteps }
+            await MainActor.run {
+                self.analysisProgress += 1.0 / totalSteps
+            }
         }
 
         // ค้นหา dotfiles ใน home: ~/.spotify, ~/.vscode ฯลฯ
@@ -152,8 +153,9 @@ final class AppUninstaller {
         }
 
         // pkgutil receipts
-        step += 1
-        await MainActor.run { self.analysisProgress = step / totalSteps }
+        await MainActor.run {
+            self.analysisProgress += 1.0 / totalSteps
+        }
         let receiptsDir = "/private/var/db/receipts"
         if let receipts = try? fm.contentsOfDirectory(atPath: receiptsDir) {
             for receipt in receipts {
@@ -167,8 +169,9 @@ final class AppUninstaller {
         }
 
         // mdfind (Spotlight) — ค้นหาไฟล์ที่อาจหลุดจาก path scan
-        step += 1
-        await MainActor.run { self.analysisProgress = step / totalSteps }
+        await MainActor.run {
+            self.analysisProgress += 1.0 / totalSteps
+        }
         let mdfindResults = mdfindSearch(bundleID: bundleID, appName: appName)
         for mdPath in mdfindResults {
             // ข้ามถ้า path อยู่ใน allFound แล้ว
