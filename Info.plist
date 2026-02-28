@@ -2,31 +2,43 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>
+    <key>CFBundleExecutable</key>
     <string>JunkCleaner</string>
     <key>CFBundleIdentifier</key>
-    <string>com.yourname.junkcleaner</string>
+    <string>com.junkcleaner.app</string>
+    <key>CFBundleName</key>
+    <string>JunkCleaner</string>
+    <key>CFBundleDisplayName</key>
+    <string>JunkCleaner</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSSupportsAutomaticTermination</key>
+    <false/>
+
+    <!-- Show in Dock (NOT a background/menu-bar only app) -->
+    <key>LSUIElement</key>
+    <false/>
+    <key>LSBackgroundOnly</key>
+    <false/>
+
+    <!-- Permissions -->
     <key>NSAppleEventsUsageDescription</key>
-    <string>JunkCleaner needs AppleScript to remove files requiring administrator privileges.</string>
+    <string>JunkCleaner needs AppleScript to request administrator privileges for deleting system junk files.</string>
     <key>NSDesktopFolderUsageDescription</key>
-    <string>JunkCleaner scans Desktop for junk files.</string>
-    <key>NSDownloadsFolderUsageDescription</key>
-    <string>JunkCleaner scans Downloads for old files.</string>
+    <string>JunkCleaner scans for junk files on your Mac.</string>
     <key>NSDocumentsFolderUsageDescription</key>
-    <string>JunkCleaner needs access to find junk files.</string>
-    <key>NSRemovableVolumesUsageDescription</key>
-    <string>JunkCleaner scans external drives for trash.</string>
-    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
-    <array>
-        <string>/Library/</string>
-        <string>/private/var/</string>
-        <string>/usr/local/</string>
-    </array>
-    <key>NSUserNotificationAlertStyle</key>
-    <string>alert</string>
+    <string>JunkCleaner scans for junk files on your Mac.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>JunkCleaner scans your Downloads folder for old files.</string>
 </dict>
 </plist>

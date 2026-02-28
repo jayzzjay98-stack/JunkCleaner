@@ -32,9 +32,6 @@ final class JunkCleaner {
     func clean(items: [JunkItem]) async {
         guard !isDeleting else { return }
 
-        let adminReady = await setupAdminPersistent()
-        guard adminReady else { return }
-
         await MainActor.run {
             self.isDeleting = true
             self.deleteProgress = 0
@@ -45,7 +42,18 @@ final class JunkCleaner {
             self.lastResult = nil
         }
 
+        // Request admin once before starting
+        let adminReady = await setupAdminPersistent()
+        if !adminReady {
+            await MainActor.run {
+                self.isDeleting = false
+                self.currentDeleteTask = "Cancelled (needs permission)"
+            }
+            return
+        }
+
         let start = Date()
+        // Sort: launch agents/daemons first so they are unloaded before other files
         let sorted = items.sorted {
             ($0.type == .appLaunchAgents || $0.type == .appLaunchDaemons) &&
             !($1.type == .appLaunchAgents || $1.type == .appLaunchDaemons)
@@ -56,6 +64,17 @@ final class JunkCleaner {
                 self.currentDeleteTask = "Cleaning: \(item.displayName)"
                 self.deleteProgress = Double(index) / Double(sorted.count)
             }
+
+            // Check file still exists
+            guard fm.fileExists(atPath: item.path) else {
+                // File already gone — count as success
+                await MainActor.run {
+                    self.totalFreedBytes += item.sizeBytes
+                    self.deletedItems.append(item)
+                }
+                continue
+            }
+
             do {
                 try await deleteItem(item)
                 await MainActor.run {
@@ -84,84 +103,69 @@ final class JunkCleaner {
             self.currentDeleteTask = "Done!"
         }
 
-        // ส่ง macOS system notification แจ้งเตือนผลลัพธ์
         sendNotification(result: result)
     }
 
-    // MARK: - macOS Notification
-    private func sendNotification(result: CleanResult) {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = "JunkCleaner — เสร็จแล้ว! 🗑"
-
-            if result.freedGB >= 1.0 {
-                content.body = "ลบไฟล์ขยะไปได้ \(String(format: "%.2f GB", result.freedGB)) · \(result.deletedCount) ไฟล์"
-            } else {
-                content.body = "ลบไฟล์ขยะไปได้ \(String(format: "%.1f MB", result.freedMB)) · \(result.deletedCount) ไฟล์"
-            }
-
-            if result.failedCount > 0 {
-                content.subtitle = "⚠️ ลบไม่ได้ \(result.failedCount) ไฟล์"
-            }
-
-            content.sound = .default
-
-            let request = UNNotificationRequest(
-                identifier: "junkcleaner.done.\(Int(Date().timeIntervalSince1970))",
-                content: content,
-                trigger: nil   // แสดงทันที
-            )
-            UNUserNotificationCenter.current().add(request)
-        }
-    }
-
-    // MARK: - ลบไฟล์เดียว
+    // MARK: - Delete Single Item
     private func deleteItem(_ item: JunkItem) async throws {
         let path = item.path
         let url = URL(fileURLWithPath: path)
-        guard fm.fileExists(atPath: path) else { return }
 
+        // Unload launch items before deleting
         if item.type == .appLaunchAgents || item.type == .appLaunchDaemons {
             unloadLaunchItem(path: path)
-            try? await Task.sleep(nanoseconds: 300_000_000)
+            try? await Task.sleep(nanoseconds: 200_000_000)
         }
 
+        // Receipts: delete both .plist and .bom
         if item.type == .appReceipts {
-            let packageID = (path as NSString).lastPathComponent
+            let base = (path as NSString).lastPathComponent
                 .replacingOccurrences(of: ".plist", with: "")
                 .replacingOccurrences(of: ".bom", with: "")
-            try? sudoRm(path: "/private/var/db/receipts/\(packageID).plist")
-            try? sudoRm(path: "/private/var/db/receipts/\(packageID).bom")
+            let dir = "/private/var/db/receipts"
+            sudoRmForce(path: "\(dir)/\(base).plist")
+            sudoRmForce(path: "\(dir)/\(base).bom")
             return
         }
 
-        if path.hasPrefix("/Library/") || path.hasPrefix("/private/") || path.hasPrefix("/usr/") {
-            try sudoRm(path: path)
-            return
-        }
-
+        // Trash contents: remove each file inside
         if item.type == .trashContents {
             guard let contents = try? fm.contentsOfDirectory(atPath: path) else { return }
             for file in contents {
                 let filePath = "\(path)/\(file)"
                 if (try? fm.removeItem(atPath: filePath)) == nil {
-                    try? sudoRm(path: filePath)
+                    sudoRmForce(path: filePath)
                 }
             }
             return
         }
 
+        // System paths need sudo
+        if isSystemPath(path) {
+            try sudoRm(path: path)
+            return
+        }
+
+        // Try normal trash first, fallback to direct delete, then sudo
         var outURL: NSURL?
         do {
             try fm.trashItem(at: url, resultingItemURL: &outURL)
         } catch {
-            try sudoRm(path: path)
+            do {
+                try fm.removeItem(at: url)
+            } catch {
+                try sudoRm(path: path)
+            }
         }
     }
 
-    // MARK: - sudo rm
+    // MARK: - Is System Path
+    private func isSystemPath(_ path: String) -> Bool {
+        let systemPrefixes = ["/Library/", "/private/", "/usr/", "/opt/"]
+        return systemPrefixes.contains(where: { path.hasPrefix($0) })
+    }
+
+    // MARK: - sudo rm (throws on failure)
     private func sudoRm(path: String) throws {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
@@ -172,11 +176,22 @@ final class JunkCleaner {
         p.waitUntilExit()
         if p.terminationStatus != 0 {
             throw NSError(domain: "JunkCleaner", code: Int(p.terminationStatus),
-                          userInfo: [NSLocalizedDescriptionKey: "sudo rm failed: \(path)"])
+                          userInfo: [NSLocalizedDescriptionKey: "Permission denied: \(path)"])
         }
     }
 
-    // MARK: - Admin Setup (ขอรหัสครั้งเดียว)
+    // MARK: - sudo rm (silent, no throw)
+    private func sudoRmForce(path: String) {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+        p.arguments = ["-n", "/bin/rm", "-rf", path]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        try? p.run()
+        p.waitUntilExit()
+    }
+
+    // MARK: - Admin Setup
     private func setupAdminPersistent() async -> Bool {
         if isSudoersReady() { return true }
 
@@ -186,7 +201,7 @@ final class JunkCleaner {
                 let sudoersFile = "/private/etc/sudoers.d/junkcleaner_\(user)"
                 let rule = "\(user) ALL=(ALL) NOPASSWD: /bin/rm"
                 let script = """
-                do shell script "mkdir -p /private/etc/sudoers.d && echo '\(rule)' > \(sudoersFile) && chmod 440 \(sudoersFile) && /usr/bin/sudo -n /bin/rm -f /dev/null" with prompt "JunkCleaner ต้องการรหัสผ่านครั้งเดียว เพื่อลบไฟล์ขยะโดยไม่ถามซ้ำ" with administrator privileges
+                do shell script "mkdir -p /private/etc/sudoers.d && echo '\(rule)' > \(sudoersFile) && chmod 440 \(sudoersFile)" with prompt "JunkCleaner needs one-time permission to delete junk files" with administrator privileges
                 """
                 var errorDict: NSDictionary?
                 NSAppleScript(source: script)?.executeAndReturnError(&errorDict)
@@ -217,5 +232,25 @@ final class JunkCleaner {
         p.standardError = FileHandle.nullDevice
         try? p.run()
         p.waitUntilExit()
+    }
+
+    // MARK: - Notification
+    private func sendNotification(result: CleanResult) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "JunkCleaner — Done! 🗑"
+            content.body = "Freed \(result.formattedFreed) · \(result.deletedCount) files deleted"
+            if result.failedCount > 0 {
+                content.subtitle = "⚠️ \(result.failedCount) files could not be deleted"
+            }
+            content.sound = .default
+            let request = UNNotificationRequest(
+                identifier: "junkcleaner.done.\(Int(Date().timeIntervalSince1970))",
+                content: content,
+                trigger: nil
+            )
+            UNUserNotificationCenter.current().add(request)
+        }
     }
 }
