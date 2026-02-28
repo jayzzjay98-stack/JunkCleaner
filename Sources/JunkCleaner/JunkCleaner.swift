@@ -112,6 +112,18 @@ final class JunkCleaner {
             return
         }
 
+        // ไฟล์ยูสเซอร์ทั่วไป ลบ Trash โดยตรง ไม่ให้ซ้อนโฟลเดอร์ในถังขยะ
+        if item.type == .trashContents {
+            guard let contents = try? fm.contentsOfDirectory(atPath: path) else { return }
+            for file in contents {
+                let filePath = "\(path)/\(file)"
+                if (try? fm.removeItem(atPath: filePath)) == nil {
+                    try sudoRm(path: filePath)
+                }
+            }
+            return
+        }
+
         // ไฟล์ user level → trash ก่อน ถ้าไม่ได้ค่อย sudo rm
         var outURL: NSURL?
         do {

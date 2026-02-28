@@ -186,14 +186,47 @@ final class JunkScanner {
     // MARK: - 2. SYSTEM CACHES
     private func scanSystemCaches() async -> [JunkItem] {
         var junk: [JunkItem] = []
-        for dir in ["\(home)/Library/Caches", "/Library/Caches"] {
-            guard let entries = try? fm.contentsOfDirectory(atPath: dir) else { continue }
-            for entry in entries {
-                if isAppleSystemPath(entry) { continue }
-                let fullPath = "\(dir)/\(entry)"
-                let size = calculateDirectorySize(fullPath)
-                if size < 1024 * 10 { continue }
-                junk.append(JunkItem(type: .systemCaches, path: fullPath, displayName: entry, sizeBytes: size, relatedApp: nil))
+        let cacheDirs = [
+            "\(home)/Library/Caches/com.apple.Safari",
+            "\(home)/Library/Caches/com.apple.dt.Xcode",
+            "/private/var/folders",
+        ]
+        for dir in cacheDirs {
+            if dir == "/private/var/folders" {
+                // Special handling for /private/var/folders using Process
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: "/bin/sh")
+                p.arguments = ["-c", "du -s /private/var/folders/*/*/C/* 2>/dev/null"]
+                let pipe = Pipe()
+                p.standardOutput = pipe
+                try? p.run()
+                p.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    let lines = output.components(separatedBy: .newlines)
+                    for line in lines {
+                        let parts = line.split(separator: "\t", maxSplits: 1)
+                        if parts.count == 2 {
+                            let sizeBlocks = Int64(parts[0]) ?? 0
+                            let sizeBytes = sizeBlocks * 512
+                            if sizeBytes >= 1024 * 10 { // > 10KB
+                                let path = String(parts[1])
+                                let name = (path as NSString).lastPathComponent
+                                junk.append(JunkItem(type: .systemCaches, path: path, displayName: name, sizeBytes: sizeBytes, relatedApp: nil))
+                            }
+                        }
+                    }
+                }
+            } else {
+                guard let entries = try? fm.contentsOfDirectory(atPath: dir) else { continue }
+                for entry in entries {
+                    if isAppleSystemPath(entry) { continue }
+                    let fullPath = "\(dir)/\(entry)"
+                    let size = calculateDirectorySize(fullPath)
+                    if size < 1024 * 10 { continue }
+                    junk.append(JunkItem(type: .systemCaches, path: fullPath, displayName: entry, sizeBytes: size, relatedApp: nil))
+                }
             }
         }
         return junk
@@ -316,26 +349,10 @@ final class JunkScanner {
 
     // MARK: - 6. LANGUAGE PACKS
     private func scanLanguagePacks() async -> [JunkItem] {
-        var junk: [JunkItem] = []
-        let preferred = Set(Locale.preferredLanguages.compactMap { Locale(identifier: $0).language.languageCode?.identifier ?? "" })
-        let keep = preferred.union(["en", "Base"])
-
-        for dir in ["/Applications", "\(home)/Applications"] {
-            guard let apps = try? fm.contentsOfDirectory(atPath: dir) else { continue }
-            for app in apps where app.hasSuffix(".app") {
-                let resourcesPath = "\(dir)/\(app)/Contents/Resources"
-                guard let entries = try? fm.contentsOfDirectory(atPath: resourcesPath) else { continue }
-                for entry in entries where entry.hasSuffix(".lproj") {
-                    let lang = (entry as NSString).deletingPathExtension
-                    if keep.contains(lang) { continue }
-                    let fullPath = "\(resourcesPath)/\(entry)"
-                    let size = calculateDirectorySize(fullPath)
-                    if size < 1024 { continue }
-                    junk.append(JunkItem(type: .languagePacks, path: fullPath, displayName: "\(lang) — \(app)", sizeBytes: size, relatedApp: app))
-                }
-            }
-        }
-        return junk
+        // ไม่สแกน language packs เพราะการลบ .lproj ภายใน .app bundle
+        // จะทำให้ macOS code signature พัง → แอปเปิดไม่ได้
+        // ต้องใช้ codesign --deep --force resign หลังลบ ซึ่งซับซ้อนเกินไป
+        return []
     }
 
     // MARK: - 7. iOS RELATED
@@ -441,7 +458,7 @@ final class JunkScanner {
         var total: Int64 = 0
         if let enumerator = fm.enumerator(at: URL(fileURLWithPath: path),
                                            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
-                                           options: [.skipsHiddenFiles]) {
+                                           options: []) {
             for case let url as URL in enumerator {
                 if let rv = try? url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey]),
                    rv.isRegularFile == true, let sz = rv.fileSize {
@@ -463,14 +480,32 @@ final class JunkScanner {
 
     private func isAppleSystemPath(_ name: String) -> Bool {
         let n = name.lowercased()
-        let protected = ["com.apple.security", "com.apple.trust", "com.apple.finder",
-                         "com.apple.dock", "com.apple.bird", "com.apple.icloud",
-                         "com.apple.mail", "com.apple.notes", "com.apple.photos",
-                         "com.apple.reminders", "com.apple.siri", "com.apple.facetime",
-                         "com.apple.coregraphics", "com.apple.metal", "com.apple.webkit",
-                         "com.apple.systempreferences", "com.apple.spotlight",
-                         "com.apple.fontregistry", "com.apple.voiceover"]
-        return protected.contains(where: { n.hasPrefix($0) })
+            .replacingOccurrences(of: ".plist", with: "")
+            .replacingOccurrences(of: ".savedstate", with: "")
+
+        // บล็อค com.apple.* ทั้งหมด
+        // ยกเว้น Apple apps ที่ user ซื้อ/download เองซึ่งมี leftover จริง
+        if n.hasPrefix("com.apple.") {
+            // Apple apps ที่อนุญาตให้ลบ leftover ได้ (user-facing apps)
+            let allowedAppleApps = [
+                "com.apple.garageband",
+                "com.apple.imovie",
+                "com.apple.logic",
+                "com.apple.finalcutpro",
+                "com.apple.motionapp",
+                "com.apple.compressor",
+                "com.apple.mainstagemac",
+                "com.apple.numbers",
+                "com.apple.pages",
+                "com.apple.keynote",
+            ]
+            return !allowedAppleApps.contains(where: { n.hasPrefix($0) })
+        }
+
+        // บล็อค system binary paths
+        let systemPaths = ["/system/", "/usr/bin/", "/usr/sbin/", "/usr/lib/",
+                           "/bin/", "/sbin/", "/library/apple/"]
+        return systemPaths.contains(where: { n.hasPrefix($0) })
     }
 
     private func extractAppName(from entry: String) -> String? {
