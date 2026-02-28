@@ -31,11 +31,10 @@ final class JunkCleaner {
     func clean(items: [JunkItem]) async {
         guard !isDeleting else { return }
 
-        // Setup sudoers ก่อน loop ลบไฟล์ หากยกเลิกให้หยุดการทำงาน
-        if !setupAdminOnce() {
-            await MainActor.run { self.lastResult = CleanResult(freedBytes: 0, deletedCount: 0, failedCount: 0, duration: 0) }
-            return
-        }
+        // ขอ admin ครั้งเดียว — เขียน sudoers + ทดสอบว่าใช้งานได้จริง
+        // ถ้า user กด Cancel หรือใส่รหัสผิด ให้หยุดทั้งหมด
+        let adminReady = await setupAdminPersistent()
+        guard adminReady else { return }
 
         await MainActor.run {
             self.isDeleting = true
@@ -48,7 +47,6 @@ final class JunkCleaner {
         }
 
         let start = Date()
-        // เรียง: LaunchAgents/Daemons ก่อน (unload ก่อนลบ)
         let sorted = items.sorted {
             ($0.type == .appLaunchAgents || $0.type == .appLaunchDaemons) &&
             !($1.type == .appLaunchAgents || $1.type == .appLaunchDaemons)
@@ -59,7 +57,6 @@ final class JunkCleaner {
                 self.currentDeleteTask = "Cleaning: \(item.displayName)"
                 self.deleteProgress = Double(index) / Double(sorted.count)
             }
-
             do {
                 try await deleteItem(item)
                 await MainActor.run {
@@ -67,91 +64,117 @@ final class JunkCleaner {
                     self.deletedItems.append(item)
                 }
             } catch {
-                let reason = error.localizedDescription
                 await MainActor.run {
-                    self.failedItems.append((item, reason))
+                    self.failedItems.append((item, error.localizedDescription))
                 }
             }
         }
 
         let duration = Date().timeIntervalSince(start)
         await MainActor.run {
-            self.lastResult = CleanResult(freedBytes: self.totalFreedBytes, deletedCount: self.deletedItems.count, failedCount: self.failedItems.count, duration: duration)
+            self.lastResult = CleanResult(
+                freedBytes: self.totalFreedBytes,
+                deletedCount: self.deletedItems.count,
+                failedCount: self.failedItems.count,
+                duration: duration
+            )
             self.isDeleting = false
             self.deleteProgress = 1.0
             self.currentDeleteTask = "Done!"
         }
     }
 
-    // MARK: - ลบ item เดียว
+    // MARK: - ลบไฟล์เดียว (ไม่ขอรหัสซ้ำ เพราะ sudoers พร้อมแล้ว)
     private func deleteItem(_ item: JunkItem) async throws {
         let path = item.path
         let url = URL(fileURLWithPath: path)
         guard fm.fileExists(atPath: path) else { return }
 
-        // LaunchAgent/Daemon: unload ก่อนเสมอ แล้วรอ 0.3 วินาที
+        // LaunchAgent/Daemon: unload ก่อน
         if item.type == .appLaunchAgents || item.type == .appLaunchDaemons {
             unloadLaunchItem(path: path)
             try? await Task.sleep(nanoseconds: 300_000_000)
         }
 
-        // pkgutil receipt: ใช้ pkgutil --forget
+        // pkgutil receipt
         if item.type == .appReceipts {
             let packageID = (path as NSString).lastPathComponent
                 .replacingOccurrences(of: ".plist", with: "")
                 .replacingOccurrences(of: ".bom", with: "")
-            forgetPackage(packageID: packageID)
+            try sudoRm(path: "/private/var/db/receipts/\(packageID).plist")
+            try sudoRm(path: "/private/var/db/receipts/\(packageID).bom")
             return
         }
 
-        // ถ้า path ครอบคลุม /Library/, /private/, /usr/ ให้ข้าม trashItem แล้วเรียก deleteWithAdmin ทันที
+        // ไฟล์ใน system paths → ใช้ sudo rm ทันที (sudoers พร้อมแล้ว ไม่ขอรหัส)
         if path.hasPrefix("/Library/") || path.hasPrefix("/private/") || path.hasPrefix("/usr/") {
-            try await deleteWithAdmin(path: path)
+            try sudoRm(path: path)
             return
         }
 
-        // ลองย้ายไป Trash ก่อน (safer)
+        // ไฟล์ user level → trash ก่อน ถ้าไม่ได้ค่อย sudo rm
         var outURL: NSURL?
         do {
             try fm.trashItem(at: url, resultingItemURL: &outURL)
         } catch {
-            // ถ้า trashItem fail ให้เรียก deleteWithAdmin ทันที อย่า fallback ไป removeItem
-            try await deleteWithAdmin(path: path)
+            try sudoRm(path: path)
         }
     }
 
-    // MARK: - Admin delete ผ่าน Process sudo
-    private func deleteWithAdmin(path: String) async throws {
-        var p = Process()
+    // MARK: - sudo rm -rf (ไม่มี popup เพราะ sudoers อนุญาตแล้ว)
+    private func sudoRm(path: String) throws {
+        let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
         p.arguments = ["-n", "/bin/rm", "-rf", path]
         p.standardOutput = FileHandle.nullDevice
         p.standardError = FileHandle.nullDevice
-        
-        do {
-            try p.run()
-            p.waitUntilExit()
-            if p.terminationStatus != 0 {
-                // ถ้า sudo -n fail แสดงว่า sudoers ยังไม่ได้ setup -> fallback
-                if !setupAdminOnce() {
-                    throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: "Admin setup failed or cancelled"])
-                }
-                
-                // ลองใหม่อีกครั้ง
-                p = Process()
-                p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-                p.arguments = ["-n", "/bin/rm", "-rf", path]
-                p.standardOutput = FileHandle.nullDevice
-                p.standardError = FileHandle.nullDevice
-                try p.run()
-                p.waitUntilExit()
-                if p.terminationStatus != 0 {
-                    throw NSError(domain: "JunkCleaner", code: Int(p.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "Admin delete failed after setup"])
-                }
-            }
-        } catch {
-            throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to run sudo process: \(error.localizedDescription)"])
+        try p.run()
+        p.waitUntilExit()
+        if p.terminationStatus != 0 {
+            throw NSError(domain: "JunkCleaner", code: Int(p.terminationStatus),
+                          userInfo: [NSLocalizedDescriptionKey: "sudo rm failed: \(path)"])
         }
+    }
+
+    // MARK: - Setup Admin (ขอรหัสครั้งเดียว เขียน sudoers + ทดสอบ)
+    // ใช้ async เพื่อรัน AppleScript บน background thread ไม่ block UI
+    private func setupAdminPersistent() async -> Bool {
+        // ทดสอบก่อนว่า sudoers มีแล้วหรือยัง (ถ้ามีแล้วไม่ต้องขอรหัสซ้ำ)
+        if isSudoersReady() { return true }
+
+        // ยังไม่มี sudoers → ขอรหัส 1 ครั้ง เพื่อเขียน sudoers
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let user = NSUserName()
+                let sudoersFile = "/private/etc/sudoers.d/junkcleaner_\(user)"
+                let rule = "\(user) ALL=(ALL) NOPASSWD: /bin/rm"
+
+                // สร้าง sudoers + ทดสอบว่าใช้งานได้ทันที ในคำสั่งเดียว
+                let script = """
+                do shell script "mkdir -p /private/etc/sudoers.d && echo '\(rule)' > \(sudoersFile) && chmod 440 \(sudoersFile) && /usr/bin/sudo -n /bin/rm -f /dev/null" with prompt "JunkCleaner ต้องการรหัสผ่านครั้งเดียว เพื่อลบไฟล์ขยะโดยไม่ถามซ้ำ" with administrator privileges
+                """
+                var errorDict: NSDictionary?
+                NSAppleScript(source: script)?.executeAndReturnError(&errorDict)
+                continuation.resume(returning: errorDict == nil)
+            }
+        }
+    }
+
+    // เช็คว่า sudoers file มีอยู่และ sudo -n ใช้งานได้จริงไหม
+    private func isSudoersReady() -> Bool {
+        let user = NSUserName()
+        let sudoersFile = "/private/etc/sudoers.d/junkcleaner_\(user)"
+        guard fm.fileExists(atPath: sudoersFile) else { return false }
+
+        // ทดสอบ sudo -n จริง
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+        p.arguments = ["-n", "/bin/rm", "-f", "/dev/null"]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        try? p.run()
+        p.waitUntilExit()
+        return p.terminationStatus == 0
     }
 
     private func unloadLaunchItem(path: String) {
@@ -162,25 +185,5 @@ final class JunkCleaner {
         p.standardError = FileHandle.nullDevice
         try? p.run()
         p.waitUntilExit()
-    }
-
-    private func forgetPackage(packageID: String) {
-        let script = "do shell script \"pkgutil --forget '\(packageID)'\" with administrator privileges"
-        let appleScript = NSAppleScript(source: script)
-        var err: NSDictionary?
-        appleScript?.executeAndReturnError(&err)
-    }
-
-    // MARK: - Admin Setup
-    private func setupAdminOnce() -> Bool {
-        let user = NSUserName()
-        let script = """
-        do shell script "mkdir -p /private/etc/sudoers.d && echo '\(user) ALL=(ALL) NOPASSWD: /bin/rm' > /private/etc/sudoers.d/junkcleaner_\(user) && chmod 440 /private/etc/sudoers.d/junkcleaner_\(user)" with prompt "JunkCleaner ต้องการรหัสผ่านครั้งเดียว เพื่อเปิดใช้ Touch ID สำหรับการลบไฟล์ในอนาคต" with administrator privileges
-        """
-        var errorDict: NSDictionary?
-        if let appleScript = NSAppleScript(source: script) {
-            appleScript.executeAndReturnError(&errorDict)
-        }
-        return errorDict == nil
     }
 }
