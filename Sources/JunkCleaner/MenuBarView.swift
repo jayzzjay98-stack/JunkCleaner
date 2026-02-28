@@ -3,319 +3,453 @@ import SwiftUI
 struct MenuBarView: View {
     @Bindable var scanner: JunkScanner
     @Bindable var cleaner: JunkCleaner
-    @Bindable var uninstaller: AppUninstaller
 
-    @State private var selectedTab = 0
     @AppStorage("selectedTheme") private var selectedTheme: Int = 0
     private var theme: AppTheme { appThemes[selectedTheme] }
-
+    
+    @State private var scrollOffset: CGFloat = 0
+    @State private var dragStartOffset: CGFloat = 0
+    @State private var isDragging: Bool = false
+    
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 8) {
-                Spacer()
-                Image(systemName: "trash.circle")
-                    .font(.system(size: 16))
-                    .foregroundStyle(theme.accent)
-                Text("JunkCleaner")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.9))
-                Spacer()
-            }
-            .padding(.vertical, 11)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
-            }
-
-            // Tab Picker
-            Picker("", selection: $selectedTab) {
-                Text("Overview").tag(0)
-                Text("Results").tag(1)
-                Text("Uninstaller").tag(2)
-                Text("Settings").tag(3)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-
-            // Content
-            Group {
-                switch selectedTab {
-                case 0: overviewTab
-                case 1: ScanResultView(scanner: scanner, cleaner: cleaner, theme: theme)
-                case 2: AppUninstallerView(uninstaller: uninstaller, cleaner: cleaner, theme: theme)
-                default: settingsTab
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            // Footer
-            HStack {
-                Button {
-                    NSApplication.shared.terminate(nil)
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("⏻").font(.system(size: 11))
-                        Text("Quit").font(.system(size: 12, weight: .medium, design: .monospaced))
-                    }
-                    .foregroundStyle(.white.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-                .keyboardShortcut("q", modifiers: [.command])
-                Spacer()
-                Text("JunkCleaner v1.0")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.4))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .overlay(alignment: .top) {
-                Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
-            }
+            headerSection
+            mainDisplay
+            statsGrid
+            dividerLine("JUNK")
+            junkListSection
+            actionButtons
+            themeSection
+            footerSection
         }
-        .frame(width: 400, height: 560)
+        .frame(width: 280)
         .background(theme.bgColor)
     }
 
-    // MARK: - Overview Tab
-    private var overviewTab: some View {
-        VStack(spacing: 0) {
+    // MARK: - Header
+    private var headerSection: some View {
+        HStack {
             Spacer()
+            Image(systemName: "trash")
+                .font(.system(size: 17))
+                .foregroundStyle(theme.accent)
+            Text("JunkCleaner · \(chipName)")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.white.opacity(0.9))
+            Spacer()
+        }
+        .padding(.vertical, 12)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+        }
+    }
 
-            // Big icon + status
-            VStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(theme.accentDim)
-                        .frame(width: 80, height: 80)
-                    Image(systemName: "trash.circle")
-                        .font(.system(size: 44))
+    // MARK: - Main Display
+    private var mainDisplay: some View {
+        let (totalGB, freeGB) = scanner.getDiskInfo()
+        let diskUsedPercent = totalGB > 0 ? Int(((totalGB - freeGB) / totalGB) * 100) : 0
+        let itemsCount = scanner.scanResult?.items.count ?? 0
+
+        return HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("JUNK FILES")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .tracking(0.8)
+                    .padding(.bottom, 4)
+
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(String(format: "%.1f", scanner.totalJunkGB))
+                        .font(.system(size: 42, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.accent)
-                        .shadow(color: theme.accent.opacity(0.3), radius: 8)
+                        .shadow(color: theme.accent.opacity(0.25), radius: 10)
+                        .monospacedDigit()
+                    Text("GB")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(theme.accent)
                 }
+                
+                Text(scanner.isScanning ? "Scanning..." : (scanner.scanResult != nil ? "\(itemsCount) items found" : "Ready to scan"))
+                    .font(.system(size: 12, weight: .regular, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.top, 2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-                if scanner.isScanning {
-                    VStack(spacing: 8) {
-                        ProgressView(value: scanner.scanProgress)
-                            .progressViewStyle(.linear)
-                            .tint(theme.accent)
-                            .frame(width: 200)
-                        Text(scanner.currentScanTask)
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
-                    Button("Cancel") { scanner.cancelScan() }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.red.opacity(0.8))
-                } else if let result = scanner.scanResult {
-                    // แสดงผลสแกน
-                    VStack(spacing: 4) {
-                        let gb = Double(result.totalSize) / 1_073_741_824.0
-                        let mb = Double(result.totalSize) / 1_048_576.0
-                        Text(gb >= 1.0 ? String(format: "%.2f GB", gb) : String(format: "%.0f MB", mb))
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .foregroundStyle(theme.accent)
-                            .monospacedDigit()
-                        Text("of junk found")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.6))
-                        Text("\(result.items.count) items · \(String(format: "%.1f", result.scanDuration))s")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                    .padding(.bottom, 4)
-
-                    // mini stats by category
-                    let byGroup = Dictionary(grouping: result.items) { $0.type.category }
-                    HStack(spacing: 6) {
-                        ForEach(CategoryGroup.allCases) { group in
-                            if let items = byGroup[group], !items.isEmpty {
-                                let size = items.reduce(0) { $0 + $1.sizeBytes }
-                                miniStatBox(label: group.rawValue.components(separatedBy: " ").first ?? group.rawValue,
-                                            value: formatSize(size), theme: theme)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 4)
-
-                    HStack(spacing: 8) {
-                        Button("Scan Again") {
-                            Task { await scanner.startScan() }
-                        }
-                        .buttonStyle(JunkButtonStyle(theme: theme, isSecondary: true))
-
-                        Button("Clean All") {
-                            selectedTab = 1
-                            let selected = result.items.filter { $0.isSelected }
-                            Task { await cleaner.clean(items: selected) }
-                        }
-                        .buttonStyle(JunkButtonStyle(theme: theme))
-                    }
-
-                } else {
-                    Text("Ready to scan your Mac")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .padding(.bottom, 4)
-
-                    Button("Scan Now") {
-                        Task { await scanner.startScan() }
-                    }
-                    .buttonStyle(JunkButtonStyle(theme: theme))
-                    .keyboardShortcut("s", modifiers: [.command])
-                }
-            }
-
-            if let result = cleaner.lastResult {
-                Text("✅ Last clean freed \(result.formattedFreed) (\(result.deletedCount) items)")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Color(red: 0.3, green: 0.9, blue: 0.5))
+                segmentBar(percent: diskUsedPercent)
+                    .frame(maxWidth: .infinity)
                     .padding(.top, 8)
             }
+            Spacer()
+            miniRing(freeGB: freeGB, totalGB: totalGB)
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+    }
+
+    private func segmentBar(percent: Int) -> some View {
+        GeometryReader { geometry in
+            let total = max(8, Int(geometry.size.width / 12))
+            let filled = Int(Double(percent) / 100.0 * Double(total))
+            
+            HStack(spacing: 1.5) {
+                ForEach(0..<total, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(
+                            i < filled ? theme.accent :
+                            i == filled ? theme.accent.opacity(0.35) :
+                            Color.white.opacity(0.05)
+                        )
+                        .frame(height: segmentHeight(i, total: total))
+                }
+            }
+        }
+        .frame(height: 14)
+    }
+
+    private func segmentHeight(_ i: Int, total: Int) -> CGFloat {
+        let mid = Double(total) / 2.0
+        return CGFloat(14.0 - abs(Double(i) - mid) * 0.8)
+    }
+
+    private func miniRing(freeGB: Double, totalGB: Double) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.05), lineWidth: 6)
+                .frame(width: 68, height: 68)
+
+            let freePercent = totalGB > 0 ? (freeGB / totalGB) : 0.0
+            Circle()
+                .trim(from: 0, to: freePercent)
+                .stroke(theme.accent, style: StrokeStyle(lineWidth: 6, lineCap: .butt))
+                .frame(width: 68, height: 68)
+                .rotationEffect(.degrees(-90))
+                .shadow(color: theme.accent.opacity(0.25), radius: 4)
+
+            VStack(spacing: 1) {
+                Text(String(format: "%.0f", freeGB))
+                    .font(.system(size: 17, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                Text("FREE")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+        }
+    }
+
+    // MARK: - Stats Grid
+    private var statsGrid: some View {
+        let lastScanText: String
+        if scanner.scanResult != nil {
+            lastScanText = "Done"
+        } else {
+            lastScanText = "Never"
+        }
+
+        return HStack(spacing: 4) {
+            statBox(label: "STATUS", value: scanner.isScanning ? "Scanning" : (scanner.scanResult != nil ? "Done" : "Ready"), isOk: !scanner.isScanning)
+            statBox(label: "ITEMS", value: "\(scanner.scanResult?.items.count ?? 0)", isOk: false)
+            statBox(label: "LAST SCAN", value: lastScanText, isOk: false)
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
+    }
+    
+    private func statBox(label: String, value: String, isOk: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.6))
+                .tracking(0.5)
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(isOk ? Color(red: 0.29, green: 0.87, blue: 0.5) : .white.opacity(0.9))
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.white.opacity(0.03))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.06), lineWidth: 0.5))
+        )
+    }
+
+    private func dividerLine(_ label: String) -> some View {
+        ZStack {
+            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+            Text(label)
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.6))
+                .tracking(1)
+                .padding(.horizontal, 8)
+                .background(theme.bgColor)
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 6)
+    }
+
+    // MARK: - Junk List
+    private var junkListSection: some View {
+        VStack(spacing: 0) {
+            if scanner.isScanning {
+                VStack(spacing: 6) {
+                    ProgressView(value: scanner.scanProgress)
+                        .progressViewStyle(.linear)
+                        .tint(theme.accent)
+                    Text(scanner.currentScanTask)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 14)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+                
+            } else if let result = scanner.scanResult, !result.items.isEmpty {
+                // Grouping items to show top categories
+                let itemsList = result.items.sorted { $0.sizeBytes > $1.sizeBytes }.prefix(7)
+                let maxSize = itemsList.first?.sizeBytes ?? 1
+                
+                ForEach(Array(itemsList.enumerated()), id: \.element.id) { index, item in
+                    HStack(spacing: 6) {
+                        Text(String(format: "%02d", index + 1))
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(theme.accent.opacity(0.5))
+                            .frame(width: 14)
+
+                        Text(item.displayName)
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .lineLimit(1).truncationMode(.tail)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 1.5).fill(Color.white.opacity(0.06)).frame(width: 40, height: 2.5)
+                            RoundedRectangle(cornerRadius: 1.5).fill(theme.accent.opacity(0.7))
+                                .frame(width: max(2, 40 * Double(item.sizeBytes) / Double(maxSize)), height: 2.5)
+                        }
+
+                        Text(item.formattedSize)
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .frame(width: 56, alignment: .trailing)
+                    }
+                    .padding(.vertical, 3)
+                    .padding(.horizontal, 14)
+                }
+                .padding(.bottom, 8)
+                
+            } else if scanner.scanResult != nil && scanner.scanResult!.items.isEmpty {
+                 Text("No junk files found")
+                     .font(.system(size: 12, design: .monospaced))
+                     .foregroundStyle(.white.opacity(0.2))
+                     .frame(maxWidth: .infinity)
+                     .padding(.vertical, 16)
+            } else {
+                 Text("Press Scan to find junk files")
+                     .font(.system(size: 12, design: .monospaced))
+                     .foregroundStyle(.white.opacity(0.2))
+                     .frame(maxWidth: .infinity)
+                     .padding(.vertical, 16)
+            }
+        }
+    }
+
+    // MARK: - Action Buttons
+    private var actionButtons: some View {
+        VStack(spacing: 6) {
+            // Show status message if any
+            if let result = cleaner.lastResult {
+                Text("✅ Freed \(String(format: "%.2f GB", result.freedGB)) · \(result.deletedCount) items deleted")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Color(red: 0.29, green: 0.87, blue: 0.5))
+                    .lineLimit(1)
+            } else if let error = scanner.lastError {
+                 Text("❌ \(error)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Color(red: 0.9, green: 0.3, blue: 0.3))
+                    .lineLimit(1)
+            }
+            
+            HStack(spacing: 6) {
+                if cleaner.isDeleting {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small).tint(theme.accent)
+                        Text(cleaner.currentDeleteTask)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(theme.accent)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity).frame(height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8).fill(theme.accentDim)
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.borderColor, lineWidth: 0.5))
+                    )
+                } else {
+                    cleanButton(icon: "◎", label: "Scan") {
+                        Task { await scanner.startScan() }
+                    }
+                    .keyboardShortcut("s", modifiers: [.command])
+
+                    cleanButton(icon: "🗑", label: "Clean All") {
+                        guard let result = scanner.scanResult else { return }
+                        Task {
+                            await cleaner.clean(items: result.items.filter { $0.isSelected }, requireAuth: false)
+                        }
+                    }
+                    .disabled(scanner.scanResult == nil || scanner.scanResult!.items.isEmpty || scanner.isScanning)
+                    .keyboardShortcut("c", modifiers: [.command])
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
+    }
+
+    private func cleanButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(icon).font(.system(size: 17)).foregroundStyle(theme.accent)
+                Text(label).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+            }
+            .foregroundStyle(theme.accent)
+            .frame(maxWidth: .infinity).frame(height: 42)
+            .background(
+                RoundedRectangle(cornerRadius: 8).fill(theme.accentDim)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.borderColor, lineWidth: 0.5))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Theme Section
+    private var themeSection: some View {
+        VStack(spacing: 0) {
+            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+
+            VStack(spacing: 8) {
+                GeometryReader { geo in
+                    let itemWidth: CGFloat = 46
+                    let totalWidth = itemWidth * CGFloat(appThemes.count) + 24
+                    let maxOffset = max(0, totalWidth - geo.size.width)
+
+                    HStack(spacing: 5) {
+                        ForEach(Array(appThemes.enumerated()), id: \.offset) { i, t in
+                            themePreset(t, index: i)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 2)
+                    .offset(x: -scrollOffset)
+                    .background(Color.black.opacity(0.001))
+                    .gesture(
+                        DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                            .onChanged { value in
+                                if !isDragging {
+                                    isDragging = true
+                                    dragStartOffset = scrollOffset
+                                }
+                                let newOffset = dragStartOffset - value.translation.width
+                                scrollOffset = min(max(newOffset, 0), maxOffset)
+                            }
+                            .onEnded { value in
+                                isDragging = false
+                                dragStartOffset = scrollOffset
+                                
+                                let predictedOffset = dragStartOffset - value.predictedEndTranslation.width
+                                let targetOffset = min(max(predictedOffset, 0), maxOffset)
+                                
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    scrollOffset = targetOffset
+                                }
+                                dragStartOffset = scrollOffset
+                            }
+                    )
+                }
+                .frame(height: 38)
+            }
+            .padding(.vertical, 10)
+        }
+    }
+
+    private func themePreset(_ t: AppTheme, index: Int) -> some View {
+        let isActive = index == selectedTheme
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(isActive ? 0.08 : 0.04))
+                .frame(width: 36, height: 36)
+
+            Circle()
+                .fill(t.accent)
+                .frame(width: isActive ? 18 : 15, height: isActive ? 18 : 15)
+                .shadow(color: t.accent.opacity(isActive ? 0.7 : 0.3),
+                        radius: isActive ? 6 : 3)
+
+            if isActive {
+                Circle()
+                    .fill(t.accent)
+                    .frame(width: 4, height: 4)
+                    .offset(x: 12, y: 12)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .contentShape(Rectangle())
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isActive ? t.accent : Color.clear, lineWidth: 1.5)
+                .shadow(color: isActive ? t.accent.opacity(0.5) : .clear, radius: 4)
+        )
+        .scaleEffect(isActive ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isActive)
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedTheme = index }
+        }
+    }
+
+    // MARK: - Footer
+    private var footerSection: some View {
+        HStack {
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                HStack(spacing: 4) {
+                    Text("⏻").font(.system(size: 11))
+                    Text("Quit").font(.system(size: 12, weight: .medium, design: .monospaced))
+                }
+                .foregroundStyle(.white.opacity(0.6))
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("q", modifiers: [.command])
 
             Spacer()
 
-            // Theme selector
-            themeStrip
-        }
-    }
-
-    // MARK: - Settings Tab
-    private var settingsTab: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("SCAN SETTINGS")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.5))
-                    .tracking(1)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 10)
-
-                VStack(spacing: 1) {
-                    ForEach(CategoryGroup.allCases) { group in
-                        let types = JunkType.allCases.filter { $0.category == group }
-                        DisclosureGroup {
-                            ForEach(types) { type in
-                                HStack {
-                                    Image(systemName: type.icon)
-                                        .foregroundStyle(theme.accent)
-                                        .frame(width: 18)
-                                    Text(type.rawValue)
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(.white.opacity(0.8))
-                                    Spacer()
-                                    riskBadge(type.riskLevel)
-                                    Toggle("", isOn: Binding(
-                                        get: { scanner.selectedTypes.contains(type) },
-                                        set: { if $0 { scanner.selectedTypes.insert(type) } else { scanner.selectedTypes.remove(type) } }
-                                    ))
-                                    .toggleStyle(.switch)
-                                    .controlSize(.mini)
-                                    .tint(theme.accent)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 4)
-                            }
-                        } label: {
-                            Text(group.rawValue)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.9))
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                    }
-                }
-
-                Divider().overlay(Color.white.opacity(0.08))
-
-                Text("THEME")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.5))
-                    .tracking(1)
-                    .padding(.horizontal, 14)
-
-                themeStrip.padding(.bottom, 10)
-            }
-        }
-    }
-
-    // MARK: - Theme strip
-    private var themeStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 5) {
-                ForEach(Array(appThemes.enumerated()), id: \.offset) { i, t in
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(i == selectedTheme ? 0.1 : 0.04))
-                            .frame(width: 32, height: 32)
-                        Circle()
-                            .fill(t.accent)
-                            .frame(width: i == selectedTheme ? 16 : 13)
-                            .shadow(color: t.accent.opacity(0.5), radius: i == selectedTheme ? 5 : 2)
-                    }
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(i == selectedTheme ? t.accent : Color.clear, lineWidth: 1.5))
-                    .onTapGesture { withAnimation(.easeInOut(duration: 0.2)) { selectedTheme = i } }
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-        }
-    }
-
-    // MARK: - Helpers
-    private func miniStatBox(label: String, value: String, theme: AppTheme) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white)
-            Text(label)
-                .font(.system(size: 9, design: .monospaced))
+            Text("AUTO SCAN OFF · v1.0")
+                .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.5))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.05))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.borderColor, lineWidth: 0.5)))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+        }
     }
 
-    private func riskBadge(_ risk: RiskLevel) -> some View {
-        Text(risk.rawValue)
-            .font(.system(size: 9, weight: .medium))
-            .foregroundStyle(risk == .safe ? .green : risk == .caution ? .yellow : .red)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(RoundedRectangle(cornerRadius: 4).fill(
-                (risk == .safe ? Color.green : risk == .caution ? Color.yellow : Color.red).opacity(0.12)
-            ))
-    }
-
-    private func formatSize(_ bytes: Int64) -> String {
-        let gb = Double(bytes) / 1_073_741_824.0
-        let mb = Double(bytes) / 1_048_576.0
-        if gb >= 1.0 { return String(format: "%.1fG", gb) }
-        if mb >= 1.0 { return String(format: "%.0fM", mb) }
-        return String(format: "%dK", bytes / 1024)
-    }
-}
-
-// MARK: - Button Style
-struct JunkButtonStyle: ButtonStyle {
-    let theme: AppTheme
-    var isSecondary: Bool = false
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(isSecondary ? .white.opacity(0.8) : theme.accent)
-            .frame(height: 38)
-            .padding(.horizontal, 20)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSecondary ? Color.white.opacity(0.06) : theme.accentDim)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(isSecondary ? Color.white.opacity(0.12) : theme.borderColor, lineWidth: 0.5))
-            )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+    // Helpers
+    private var chipName: String {
+        var size = 0
+        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
+        var machine = [CChar](repeating: 0, count: size)
+        sysctlbyname("machdep.cpu.brand_string", &machine, &size, nil, 0)
+        let name = String(cString: machine)
+        if name.contains("M1") { return "M1" }
+        if name.contains("M2") { return "M2" }
+        if name.contains("M3") { return "M3" }
+        if name.contains("M4") { return "M4" }
+        if name.contains("M5") { return "M5" }
+        return "Mac"
     }
 }

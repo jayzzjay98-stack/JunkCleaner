@@ -479,4 +479,12 @@ final class JunkScanner {
         if parts.count >= 3 { return parts.dropFirst(2).joined(separator: " ") }
         return without.isEmpty ? nil : without
     }
+
+    // MARK: - Disk Info
+    func getDiskInfo() -> (totalGB: Double, freeGB: Double) {
+        let attrs = try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory())
+        let total = attrs?[.systemSize] as? Int64 ?? 0
+        let free = attrs?[.systemFreeSize] as? Int64 ?? 0
+        return (Double(total) / 1_073_741_824.0, Double(free) / 1_073_741_824.0)
+    }
 }

@@ -4,11 +4,10 @@ import SwiftUI
 struct JunkCleanerApp: App {
     @State private var scanner = JunkScanner()
     @State private var cleaner = JunkCleaner()
-    @State private var uninstaller = AppUninstaller()
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(scanner: scanner, cleaner: cleaner, uninstaller: uninstaller)
+            MenuBarView(scanner: scanner, cleaner: cleaner)
         } label: {
             MenuBarLabel(scanner: scanner)
         }
