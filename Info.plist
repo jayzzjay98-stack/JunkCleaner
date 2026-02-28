@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>JunkCleaner</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.yourname.junkcleaner</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>LSUIElement</key>
+    <true/>          <!-- ซ่อนจาก Dock, แสดงแค่ใน Menu Bar -->
+    <key>NSAppleEventsUsageDescription</key>
+    <string>JunkCleaner needs AppleScript to remove files requiring administrator privileges.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>JunkCleaner scans Desktop for junk files.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>JunkCleaner scans Downloads for old files.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>JunkCleaner needs access to find junk files.</string>
+    <key>NSRemovableVolumesUsageDescription</key>
+    <string>JunkCleaner scans external drives for trash.</string>
+    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+    <array>
+        <string>/Library/</string>
+        <string>/private/var/</string>
+        <string>/usr/local/</string>
+    </array>
+</dict>
+</plist>
