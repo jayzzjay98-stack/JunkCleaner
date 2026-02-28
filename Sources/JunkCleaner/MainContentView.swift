@@ -4,10 +4,33 @@ struct MainContentView: View {
     @Bindable var scanner: JunkScanner
     @Bindable var cleaner: JunkCleaner
     @Binding var showResult: Bool
+    var selectedTab: NavTab
+
+    var body: some View {
+        ZStack {
+            DS.bgSecondary
+
+            switch selectedTab {
+            case .scan:
+                ScanTabView(scanner: scanner, cleaner: cleaner, showResult: $showResult)
+                    .transition(.opacity)
+            case .settings:
+                SettingsTabView()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.18), value: selectedTab)
+    }
+}
+
+// MARK: - Scan Tab (main content)
+struct ScanTabView: View {
+    @Bindable var scanner: JunkScanner
+    @Bindable var cleaner: JunkCleaner
+    @Binding var showResult: Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            // Scrollable area
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     HeroSection(scanner: scanner)
@@ -18,11 +41,28 @@ struct MainContentView: View {
                 }
                 .padding(.bottom, 12)
             }
-
-            // Fixed bottom action bar
             ActionBar(scanner: scanner, cleaner: cleaner)
         }
-        .background(DS.bgSecondary)
+    }
+}
+
+// MARK: - Settings Tab (placeholder)
+struct SettingsTabView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "gearshape.2.fill")
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(DS.textTertiary)
+            Text("Settings")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(DS.textSecondary)
+            Text("Coming soon")
+                .font(.system(size: 12))
+                .foregroundStyle(DS.textTertiary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

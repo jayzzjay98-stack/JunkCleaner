@@ -22,7 +22,8 @@ struct ContentView: View {
                     MainContentView(
                         scanner: scanner,
                         cleaner: cleaner,
-                        showResult: $showResult
+                        showResult: $showResult,
+                        selectedTab: selectedTab
                     )
                 }
             }
@@ -56,25 +57,19 @@ struct ContentView: View {
 
 // MARK: - Navigation Tab
 enum NavTab: CaseIterable {
-    case scan, apps, privacy, extensions, settings
+    case scan, settings
 
     var icon: String {
         switch self {
-        case .scan:       return "magnifyingglass"
-        case .apps:       return "display"
-        case .privacy:    return "lock.shield.fill"
-        case .extensions: return "puzzlepiece.fill"
-        case .settings:   return "gearshape.fill"
+        case .scan:     return "magnifyingglass"
+        case .settings: return "gearshape.fill"
         }
     }
     var label: String {
         switch self {
-        case .scan:       return "Scan"
-        case .apps:       return "Apps"
-        case .privacy:    return "Privacy"
-        case .extensions: return "Extensions"
-        case .settings:   return "Settings"
+        case .scan:     return "Smart Scan"
+        case .settings: return "Settings"
         }
     }
-    var hasBadge: Bool { self == .privacy }
+    var hasBadge: Bool { false }
 }

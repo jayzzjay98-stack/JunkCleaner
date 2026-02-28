@@ -5,25 +5,21 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Top nav items (only functional ones)
             VStack(spacing: 2) {
-                ForEach(NavTab.allCases.filter { $0 != .settings }, id: \.self) { tab in
-                    NavItem(tab: tab, isSelected: selectedTab == tab) {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            selectedTab = tab
-                        }
-                    }
+                NavItem(tab: .scan, isSelected: selectedTab == .scan) {
+                    withAnimation(.easeInOut(duration: 0.15)) { selectedTab = .scan }
                 }
             }
             .padding(.top, 12)
 
             Spacer()
 
+            // Settings always at bottom
             NavItem(tab: .settings, isSelected: selectedTab == .settings) {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    selectedTab = .settings
-                }
+                withAnimation(.easeInOut(duration: 0.15)) { selectedTab = .settings }
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 14)
         }
         .frame(width: 60)
         .background(DS.bgPrimary)
@@ -35,13 +31,12 @@ struct NavItem: View {
     let tab: NavTab
     let isSelected: Bool
     let action: () -> Void
-
     @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Active indicator bar
+                // Active left-edge indicator
                 if isSelected {
                     HStack(spacing: 0) {
                         RoundedRectangle(cornerRadius: 3)
@@ -52,7 +47,7 @@ struct NavItem: View {
                     }
                 }
 
-                // Icon
+                // Icon background + icon
                 ZStack {
                     RoundedRectangle(cornerRadius: DS.radiusNavItem)
                         .fill(
@@ -65,18 +60,9 @@ struct NavItem: View {
                     Image(systemName: tab.icon)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(
-                            isSelected
-                            ? DS.lavender
+                            isSelected ? DS.lavender
                             : (hovering ? DS.textSecondary : DS.textTertiary)
                         )
-
-                    // Badge dot
-                    if tab.hasBadge {
-                        Circle()
-                            .fill(Color(hex: "#f87171"))
-                            .frame(width: 5, height: 5)
-                            .offset(x: 12, y: -12)
-                    }
                 }
             }
             .frame(width: 52, height: 44)
