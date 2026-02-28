@@ -53,11 +53,11 @@ struct EmptyIdleState: View {
             }
 
             Text("Your Mac looks clean")
-                .font(.system(size: 14, weight: .600))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(DS.textSecondary)
 
             Text("Run a scan to detect junk files, caches,\nlogs, and leftover data that can be removed.")
-                .font(.system(size: 12, weight: .400))
+                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(DS.textTertiary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -81,7 +81,7 @@ struct EmptyResultState: View {
                     .foregroundStyle(DS.success)
             }
             Text("No junk files found!")
-                .font(.system(size: 14, weight: .600))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(DS.success)
             Text("Your Mac is in great shape.")
                 .font(.system(size: 12))
@@ -137,11 +137,11 @@ struct JunkRow: View {
             // Name + category
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.displayName)
-                    .font(.system(size: 12.5, weight: .500))
+                    .font(.system(size: 12.5, weight: .medium))
                     .foregroundStyle(DS.textPrimary)
                     .lineLimit(1)
                 Text(item.type.rawValue)
-                    .font(.system(size: 10.5, weight: .400))
+                    .font(.system(size: 10.5, weight: .regular))
                     .foregroundStyle(DS.textTertiary)
                     .lineLimit(1)
             }
@@ -150,7 +150,7 @@ struct JunkRow: View {
             // Size + bar
             VStack(alignment: .trailing, spacing: 5) {
                 Text(item.formattedSize)
-                    .font(.system(size: 11.5, weight: .600, design: .monospaced))
+                    .font(.system(size: 11.5, weight: .semibold, design: .monospaced))
                     .foregroundStyle(DS.textSecondary)
 
                 // Mini bar

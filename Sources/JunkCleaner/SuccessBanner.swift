@@ -19,11 +19,11 @@ struct SuccessBanner: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Freed \(result.formattedFreed)")
-                        .font(.system(size: 13, weight: .700))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(DS.gradientSuccess)
                     Text("\(result.deletedCount) files deleted" +
                          (result.failedCount > 0 ? " · ⚠️ \(result.failedCount) failed" : ""))
-                        .font(.system(size: 10.5, weight: .400))
+                        .font(.system(size: 10.5, weight: .regular))
                         .foregroundStyle(DS.textTertiary)
                 }
 

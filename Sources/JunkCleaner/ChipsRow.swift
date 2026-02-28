@@ -68,7 +68,7 @@ struct StatChip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label)
-                .font(.system(size: 9.5, weight: .600))
+                .font(.system(size: 9.5, weight: .semibold))
                 .kerning(0.8)
                 .textCase(.uppercase)
                 .foregroundStyle(DS.textTertiary)
@@ -86,7 +86,7 @@ struct StatChip: View {
                         .foregroundStyle(DS.textPrimary)
                 }
             }
-            .font(.system(size: 15, weight: .700, design: .rounded))
+            .font(.system(size: 15, weight: .bold, design: .rounded))
             .kerning(-0.3)
             .contentTransition(.numericText())
             .animation(.spring(response: 0.4), value: value)

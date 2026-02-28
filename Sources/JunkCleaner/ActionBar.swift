@@ -58,7 +58,7 @@ struct CleaningProgressRow: View {
                 .controlSize(.small)
                 .tint(DS.lavender)
             Text(cleaner.currentDeleteTask)
-                .font(.system(size: 13, weight: .600))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(DS.lavender)
                 .lineLimit(1)
             Spacer()
@@ -91,7 +91,7 @@ struct ScanButton: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13, weight: .semibold))
                 Text("Scan")
-                    .font(.system(size: 13.5, weight: .600))
+                    .font(.system(size: 13.5, weight: .semibold))
             }
             .foregroundStyle(hovering ? DS.textPrimary : DS.textSecondary)
             .frame(maxWidth: .infinity)
@@ -147,7 +147,7 @@ struct CleanButton: View {
                 Image(systemName: "trash.fill")
                     .font(.system(size: 13, weight: .semibold))
                 Text("Clean All")
-                    .font(.system(size: 13.5, weight: .600))
+                    .font(.system(size: 13.5, weight: .semibold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)

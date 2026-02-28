@@ -18,7 +18,7 @@ struct HeroSection: View {
                 HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Junk to Clean")
-                            .font(.system(size: 10, weight: .600))
+                            .font(.system(size: 10, weight: .semibold))
                             .kerning(1.2)
                             .textCase(.uppercase)
                             .foregroundStyle(DS.textTertiary)
@@ -27,7 +27,7 @@ struct HeroSection: View {
                         // Giant number
                         HStack(alignment: .bottom, spacing: 3) {
                             Text(scanner.isScanning ? "..." : String(format: "%.1f", scanner.totalJunkGB))
-                                .font(.system(size: 62, weight: .800, design: .rounded))
+                                .font(.system(size: 62, weight: .heavy, design: .rounded))
                                 .kerning(-4)
                                 .foregroundStyle(
                                     scanner.totalJunkGB > 0 && scanner.scanResult != nil
@@ -39,14 +39,14 @@ struct HeroSection: View {
                                 .contentTransition(.numericText(countsDown: false))
 
                             Text("GB")
-                                .font(.system(size: 22, weight: .600))
+                                .font(.system(size: 22, weight: .semibold))
                                 .foregroundStyle(DS.textTertiary)
                                 .kerning(-1)
                                 .padding(.bottom, 6)
                         }
 
                         Text(captionText)
-                            .font(.system(size: 12, weight: .400))
+                            .font(.system(size: 12, weight: .regular))
                             .foregroundStyle(DS.textTertiary)
                             .padding(.top, 3)
                             .lineLimit(1)
@@ -154,8 +154,8 @@ struct DonutRing: View {
         }
     }
 
-    private var (totalGB, freeGB): (Double, Double) {
-        scanner.getDiskInfo()
+    private var freeGB: Double {
+        scanner.getDiskInfo().1
     }
 
     var body: some View {
@@ -179,13 +179,13 @@ struct DonutRing: View {
             // Center label
             VStack(spacing: 2) {
                 Text(String(format: "%.0f", freeGB))
-                    .font(.system(size: 18, weight: .700, design: .rounded))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(DS.textPrimary)
                     .monospacedDigit()
                     .contentTransition(.numericText())
 
                 Text("GB FREE")
-                    .font(.system(size: 8, weight: .600))
+                    .font(.system(size: 8, weight: .semibold))
                     .kerning(0.8)
                     .foregroundStyle(DS.textTertiary)
             }
@@ -198,7 +198,8 @@ struct DonutRing: View {
 struct DiskUsageBar: View {
     let scanner: JunkScanner
 
-    private var (totalGB, freeGB): (Double, Double) { scanner.getDiskInfo() }
+    private var totalGB: Double { scanner.getDiskInfo().0 }
+    private var freeGB: Double { scanner.getDiskInfo().1 }
     private var usedGB: Double { totalGB - freeGB }
     private var usedFraction: Double { totalGB > 0 ? usedGB / totalGB : 0.74 }
     private var junkFraction: Double { totalGB > 0 ? scanner.totalJunkGB / totalGB : 0 }
@@ -207,11 +208,11 @@ struct DiskUsageBar: View {
         VStack(spacing: 7) {
             HStack {
                 Text("Disk Usage")
-                    .font(.system(size: 11, weight: .500))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(DS.textTertiary)
                 Spacer()
                 Text(String(format: "%.0f GB used · %.0f GB total", usedGB, totalGB))
-                    .font(.system(size: 11, weight: .500))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(DS.textTertiary)
             }
 

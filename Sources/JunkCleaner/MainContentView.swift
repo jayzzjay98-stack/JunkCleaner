@@ -36,7 +36,7 @@ struct SectionLabel: View {
                 .fill(DS.borderSubtle)
                 .frame(height: 1)
             Text(text)
-                .font(.system(size: 9.5, weight: .600))
+                .font(.system(size: 9.5, weight: .semibold))
                 .kerning(1.2)
                 .textCase(.uppercase)
                 .foregroundStyle(DS.textTertiary)

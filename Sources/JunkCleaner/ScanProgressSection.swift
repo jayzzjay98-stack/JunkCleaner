@@ -10,13 +10,13 @@ struct ScanProgressSection: View {
                 // Label
                 HStack {
                     Text(scanner.currentScanTask)
-                        .font(.system(size: 11.5, weight: .500))
+                        .font(.system(size: 11.5, weight: .medium))
                         .foregroundStyle(DS.textSecondary)
                         .lineLimit(1)
                         .animation(.easeInOut, value: scanner.currentScanTask)
                     Spacer()
                     Text(String(format: "%.0f%%", scanner.scanProgress * 100))
-                        .font(.system(size: 11, weight: .600, design: .monospaced))
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(DS.textTertiary)
                 }
 

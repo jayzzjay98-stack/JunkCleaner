@@ -15,7 +15,7 @@ struct TitleBar: View {
                 // Free space label right
                 let (_, freeGB) = scanner.getDiskInfo()
                 Text(String(format: "%.0f GB free", freeGB))
-                    .font(.system(size: 11, weight: .500))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(DS.textTertiary)
                     .padding(.trailing, 16)
             }
@@ -24,7 +24,7 @@ struct TitleBar: View {
             HStack(spacing: 7) {
                 AppLogoMark()
                 Text("JunkCleaner")
-                    .font(.system(size: 13, weight: .600))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(DS.textSecondary)
             }
         }
