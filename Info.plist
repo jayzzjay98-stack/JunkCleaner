@@ -26,5 +26,7 @@
         <string>/private/var/</string>
         <string>/usr/local/</string>
     </array>
+    <key>NSUserNotificationAlertStyle</key>
+    <string>alert</string>
 </dict>
 </plist>

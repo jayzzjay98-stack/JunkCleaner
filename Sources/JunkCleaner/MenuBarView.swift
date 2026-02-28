@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct MenuBarView: View {
     @Bindable var scanner: JunkScanner
@@ -10,6 +11,8 @@ struct MenuBarView: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var dragStartOffset: CGFloat = 0
     @State private var isDragging: Bool = false
+    @State private var showResult: Bool = false
+    @State private var resultTimer: Timer? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -24,6 +27,25 @@ struct MenuBarView: View {
         }
         .frame(width: 280)
         .background(theme.bgColor)
+        .onChange(of: cleaner.isDeleting) { _, isDeleting in
+            // เมื่อ clean เสร็จ (isDeleting เปลี่ยนจาก true → false) และมีผลลัพธ์
+            if !isDeleting, cleaner.lastResult != nil {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    showResult = true
+                }
+                // ซ่อนอัตโนมัติหลัง 10 วินาที
+                resultTimer?.invalidate()
+                resultTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.4)) { showResult = false }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            // ขอ permission notification ตั้งแต่แรก
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        }
     }
 
     // MARK: - Header
@@ -261,14 +283,37 @@ struct MenuBarView: View {
     // MARK: - Action Buttons
     private var actionButtons: some View {
         VStack(spacing: 6) {
-            // Show status message if any
-            if let result = cleaner.lastResult {
-                Text("✅ Freed \(String(format: "%.2f GB", result.freedGB)) · \(result.deletedCount) items deleted")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(Color(red: 0.29, green: 0.87, blue: 0.5))
-                    .lineLimit(1)
+            // Result box — แสดงหลัง clean เสร็จ ค้าง 10 วินาที
+            if showResult, let result = cleaner.lastResult {
+                HStack(spacing: 10) {
+                    Text("✅")
+                        .font(.system(size: 16))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ลบไฟล์ขยะได้ \(result.formattedFreed)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color(red: 0.29, green: 0.87, blue: 0.5))
+                        Text("\(result.deletedCount) ไฟล์" + (result.failedCount > 0 ? " · ⚠️ \(result.failedCount) ล้มเหลว" : ""))
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(red: 0.29, green: 0.87, blue: 0.5).opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(red: 0.29, green: 0.87, blue: 0.5).opacity(0.3), lineWidth: 0.5)
+                        )
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.95).combined(with: .opacity),
+                    removal: .opacity
+                ))
             } else if let error = scanner.lastError {
-                 Text("❌ \(error)")
+                Text("❌ \(error)")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(Color(red: 0.9, green: 0.3, blue: 0.3))
                     .lineLimit(1)
