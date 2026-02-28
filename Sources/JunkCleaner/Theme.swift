@@ -1,61 +1,62 @@
 import SwiftUI
 
-// MARK: - Design Tokens (matching junkclean-mockup.html)
+// MARK: - Design Tokens (matching junkclean-pro.html)
 enum T {
-    // Colors
-    static let bgVoid   = Color(hex: "#07070f")
-    static let bgBase   = Color(hex: "#0d0d1a")
-    static let bgRaised = Color(hex: "#121220")
-    static let bgFloat  = Color(hex: "#181828")
-    static let bgHover  = Color(hex: "#1e1e32")
+    // Fonts
+    static let fontInter = "Inter"
+    static let fontMono = "JetBrains Mono"
 
-    static let borderDim = Color.white.opacity(0.055)
-    static let borderMid = Color.white.opacity(0.09)
-    static let borderHi  = Color.white.opacity(0.14)
+    // Background layers
+    static let bgApp      = Color(hex: "#09090f")
+    static let bgSidebar  = Color(hex: "#0f0f18")
+    static let bgMain     = Color(hex: "#0b0b14")
+    static let bgSurface  = Color(hex: "#13131f")
+    static let bgElevated = Color(hex: "#181826")
+    static let bgHover    = Color(hex: "#1c1c2c")
+    static let bgActive   = Color(hex: "#1f1f30")
 
-    static let txt1 = Color(hex: "#f0efff")
-    static let txt2 = Color(hex: "#f0efff").opacity(0.52)
-    static let txt3 = Color(hex: "#f0efff").opacity(0.25)
-    static let txt4 = Color(hex: "#f0efff").opacity(0.13)
+    // Borders
+    static let b1 = Color.white.opacity(0.055)
+    static let b2 = Color.white.opacity(0.09)
+    static let b3 = Color.white.opacity(0.14)
 
-    static let acc       = Color(hex: "#7b68ee")
-    static let accLight  = Color(hex: "#9d90f5")
-    static let accDim    = Color(hex: "#7b68ee").opacity(0.18)
-    static let accGlow   = Color(hex: "#7b68ee").opacity(0.32)
+    // Text
+    static let t1 = Color.white.opacity(0.95)
+    static let t2 = Color.white.opacity(0.50)
+    static let t3 = Color.white.opacity(0.25)
+    static let t4 = Color.white.opacity(0.12)
 
-    static let ok        = Color(hex: "#3ec98e")
-    static let okGlow    = Color(hex: "#3ec98e").opacity(0.5)
+    // Accent
+    static let p      = Color(hex: "#7c6af0")
+    static let pLt    = Color(hex: "#9d8ff5")
+    static let pDim   = Color(hex: "#7c6af0").opacity(0.15)
+    static let pGlow  = Color(hex: "#7c6af0").opacity(0.30)
+    
+    static let pGrad = LinearGradient(
+        colors: [Color(hex: "#6b5ce8"), Color(hex: "#8b7af5"), Color(hex: "#a394fa")],
+        startPoint: .topLeading, endPoint: .bottomTrailing
+    )
+
+    // Semantic
+    static let ok        = Color(hex: "#3dcb8a")
+    static let okGlow    = Color(hex: "#3dcb8a").opacity(0.45)
     static let warn      = Color(hex: "#f97316")
-    static let warnGlow  = Color(hex: "#f97316").opacity(0.5)
+    static let warnGlow  = Color(hex: "#f97316").opacity(0.45)
+    static let red       = Color(hex: "#f04040")
 
-    // Gradients
-    static let accGrad = LinearGradient(
-        colors: [Color(hex: "#6c5ce7"), Color(hex: "#8b7cf8"), Color(hex: "#a78bfa")],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
-
-    static let bgGradient = LinearGradient(
-        colors: [bgVoid, bgBase],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
-
-    // Common Glass Background used for panels
-    static let glassBg = bgRaised.opacity(0.8) // Approximation of raised surface
+    // Sidebar dimensions
+    static let sidebarWidth: CGFloat = 228
 }
 
 // MARK: - Glass Panel Modifier
 struct GlassPanel: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(T.bgRaised)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(T.borderMid, lineWidth: 1)
-                    )
+            .background(T.bgSurface)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(T.b1, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
     }
 }
 

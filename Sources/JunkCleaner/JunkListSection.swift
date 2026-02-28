@@ -25,26 +25,26 @@ struct EmptyIdleState: View {
     var body: some View {
         VStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(T.bgRaised)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(T.bgSurface)
                     .frame(width: 56, height: 56)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .strokeBorder(T.borderDim, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(T.b1, lineWidth: 1)
                     )
 
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(T.txt3)
+                    .foregroundStyle(T.t3)
             }
 
             Text("Your Mac is ready")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(T.txt2)
+                .foregroundStyle(T.t2)
 
             Text("Run a scan to detect junk files, caches,\nand leftover data that can be removed.")
                 .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(T.txt3)
+                .foregroundStyle(T.t3)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
         }
@@ -57,7 +57,7 @@ struct EmptyIdleState: View {
 // MARK: - After scan: nothing found
 struct EmptyResultState: View {
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             ZStack {
                 Circle()
                     .fill(T.ok.opacity(0.12))
@@ -71,7 +71,7 @@ struct EmptyResultState: View {
                 .foregroundStyle(T.ok)
             Text("Your Mac is in great shape.")
                 .font(.system(size: 12))
-                .foregroundStyle(T.txt3)
+                .foregroundStyle(T.t3)
         }
         .padding(.vertical, 40)
         .frame(maxWidth: .infinity)
@@ -109,25 +109,27 @@ struct JunkRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            // Icon (Emoji based on category from mockup)
+            // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(item.accentColor.opacity(0.11))
-                    .frame(width: 34, height: 34)
+                    .fill(item.accentColor.opacity(0.1))
+                    .frame(width: 32, height: 32)
                 Text(item.emoji)
-                    .font(.system(size: 14))
+                    .font(.system(size: 13))
             }
 
             // Name + category
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.displayName)
                     .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(T.txt1)
+                    .foregroundStyle(T.t1)
                     .kerning(-0.15)
                     .lineLimit(1)
-                Text(item.type.rawValue)
+                
+                Text(item.catText)
                     .font(.system(size: 10, weight: .regular, design: .monospaced))
-                    .foregroundStyle(T.txt3)
+                    .foregroundStyle(T.t3)
+                    .kerning(0.2)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -135,27 +137,33 @@ struct JunkRow: View {
             // Size + bar
             VStack(alignment: .trailing, spacing: 4) {
                 Text(item.formattedSize)
-                    .font(.system(size: 11.5, weight: .medium, design: .monospaced))
-                    .foregroundStyle(T.txt2)
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(T.t2)
 
                 // Mini bar
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(T.bgHover)
-                        .frame(width: 44, height: 3)
+                        .frame(width: 40, height: 2.5)
                     
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(item.accentColor.opacity(0.65))
-                        .frame(width: max(3, 44 * barFraction), height: 3)
+                        .fill(item.accentColor.opacity(0.6))
+                        .frame(width: max(3, 40 * barFraction), height: 2.5)
                 }
             }
         }
-        .padding(.vertical, 9)
+        .padding(.vertical, 8)
         .padding(.horizontal, 10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(hovering ? T.bgFloat : Color.clear)
+                .fill(hovering ? T.bgSurface : Color.clear)
         )
-        .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { hovering = h } }
+        .onHover { h in withAnimation(.easeInOut(duration: 0.11)) { hovering = h } }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(T.b1)
+                .frame(height: 1)
+                .padding(.leading, 53)
+        }
     }
 }

@@ -1,84 +1,63 @@
 import SwiftUI
 
-// MARK: - Design Tokens (Updated to match mockup HTML)
+// MARK: - Design Tokens (Updated to match mockup Pro)
 enum DS {
 
     // MARK: Colors
-    static let bgPrimary     = T.bgVoid
-    static let bgSecondary   = T.bgBase
-    static let bgTertiary    = T.bgRaised
-    static let bgQuaternary  = T.bgFloat
+    static let bgPrimary     = T.bgApp
+    static let bgSecondary   = T.bgSidebar
+    static let bgTertiary    = T.bgMain
+    static let bgQuaternary  = T.bgSurface
+    static let bgElevated    = T.bgElevated
+    static let bgHover      = T.bgHover
+    static let bgActive     = T.bgActive
 
-    static let borderSubtle  = T.borderDim
-    static let borderDefault = T.borderMid
+    static let borderSubtle  = T.b1
+    static let borderDefault = T.b2
+    static let borderStrong  = T.b3
 
-    static let textPrimary   = T.txt1
-    static let textSecondary = T.txt2
-    static let textTertiary  = T.txt3
+    static let textPrimary   = T.t1
+    static let textSecondary = T.t2
+    static let textTertiary  = T.t3
+    static let textMuted     = T.t4
 
     // Accent palette
-    static let violet        = T.acc
-    static let purple        = Color(hex: "#6c5ce7")
-    static let lavender      = T.accLight
-    static let indigo        = Color(hex: "#8b7cf8")
+    static let purple        = T.p
+    static let purpleLt      = T.pLt
+    static let purpleDim     = T.pDim
+    static let purpleGlow    = T.pGlow
 
     // Semantic
     static let success       = T.ok
-    static let successDim    = T.ok.opacity(0.12)
-    static let successBorder = T.ok.opacity(0.2)
+    static let successGlow   = T.okGlow
     static let warning       = T.warn
-    static let warningAmber  = Color(hex: "#fbbf24")
+    static let warningGlow   = T.warnGlow
+    static let error         = T.red
 
     // MARK: Gradients
-    static let gradientAccent = T.accGrad
+    static let pGrad         = T.pGrad
     
-    static let gradientHeroText = LinearGradient(
-        colors: [Color.white, indigo.opacity(0.8)],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
-    static let gradientJunk = LinearGradient(
-        colors: [warning, warningAmber],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let gradientSuccess = LinearGradient(
-        colors: [success, Color(hex: "#6ee7b7")],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let gradientDiskUsed = LinearGradient(
-        colors: [violet, lavender],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let gradientScanBar = LinearGradient(
-        colors: [violet, lavender, Color(hex: "#f093fb")],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let gradientNavIndicator = T.accGrad
-
     // Ring gradients
     static func ringGradient(for state: RingState) -> LinearGradient {
         switch state {
-        case .idle:  return T.accGrad
+        case .idle:  return pGrad
         case .junk:  return LinearGradient(colors: [T.warn, Color(hex: "#fbbf24")], startPoint: .topLeading, endPoint: .bottomTrailing)
         case .clean: return LinearGradient(colors: [T.ok, Color(hex: "#6ee7b7")], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 
     // MARK: Shadows
-    static let shadowApp   = Color.black.opacity(0.85)
-    static let glowAccent  = T.accGlow
-    static let glowSuccess = T.okGlow
-    static let glowJunk    = T.warnGlow
-
+    static let shadowApp   = Color.black.opacity(0.7)
+    
     // MARK: Corner Radii
-    static let radiusApp     : CGFloat = 16 // Mockup uses 16px
-    static let radiusCard    : CGFloat = 13
-    static let radiusChip    : CGFloat = 12
-    static let radiusItem    : CGFloat = 11
-    static let radiusButton  : CGFloat = 11 // Mockup uses 11px
+    static let radiusApp     : CGFloat = 14 // Mockup uses 14px
+    static let radiusCard    : CGFloat = 12
+    static let radiusChip    : CGFloat = 9
+    static let radiusButton  : CGFloat = 10 // Mockup uses 10px
     static let radiusLogo    : CGFloat = 10 // Mockup uses 10px
-    static let radiusNavItem : CGFloat = 9  // Mockup uses 9px
+    static let radiusNavItem : CGFloat = 8  // Mockup uses 8px
     static let radiusIcon    : CGFloat = 8  // Mockup uses 8px
-    static let radiusBanner  : CGFloat = 9  // Mockup uses 9px
+    static let radiusBanner  : CGFloat = 8  // Mockup uses 8px
 }
 
 enum RingState { case idle, junk, clean }
@@ -116,11 +95,11 @@ extension JunkType {
 
     var accentColor: Color {
         switch category {
-        case .devTools:     return Color(hex: "#7c6af7")
+        case .devTools:     return Color(hex: "#7c6af0")
         case .browsers:     return Color(hex: "#818cf8")
         case .systemJunk:   return Color(hex: "#f59e0b")
         case .appLeftovers: return Color(hex: "#a78bfa")
-        case .other:        return Color(hex: "#34d399")
+        case .other:        return Color(hex: "#ef4444")
         }
     }
     
@@ -133,9 +112,20 @@ extension JunkType {
         case .other:       return "📄"
         }
     }
+    
+    var catText: String {
+        switch category {
+        case .devTools:    return "developer · cache"
+        case .browsers:    return "browser · cache"
+        case .systemJunk:  return "system · junk"
+        case .appLeftovers: return "app · leftovers"
+        case .other:       return "logs · diagnostics"
+        }
+    }
 }
 
 extension JunkItem {
     var accentColor: Color { type.accentColor }
     var emoji: String { type.emoji }
+    var catText: String { type.catText }
 }

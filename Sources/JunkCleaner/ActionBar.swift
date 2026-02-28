@@ -12,7 +12,7 @@ struct ActionBar: View {
     var body: some View {
         VStack(spacing: 0) {
             Rectangle()
-                .fill(T.borderDim)
+                .fill(T.b1)
                 .frame(height: 1)
 
             HStack(spacing: 10) {
@@ -30,7 +30,7 @@ struct ActionBar: View {
             .padding(.top, 12)
             .padding(.bottom, 16)
         }
-        .background(T.bgRaised)
+        .background(T.bgSidebar)
     }
 }
 
@@ -42,24 +42,24 @@ struct CleaningProgressRow: View {
         HStack(spacing: 12) {
             ProgressView()
                 .controlSize(.small)
-                .tint(T.accLight)
+                .tint(T.pLt)
             
             Text(cleaner.currentDeleteTask.lowercased())
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundStyle(T.accLight)
+                .foregroundStyle(T.pLt)
                 .lineLimit(1)
             
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 46)
+        .frame(height: 44)
         .padding(.horizontal, 18)
         .background(
-            RoundedRectangle(cornerRadius: 11)
-                .fill(T.accDim)
+            RoundedRectangle(cornerRadius: 10)
+                .fill(T.pDim)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 11)
-                        .strokeBorder(T.acc.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(T.p.opacity(0.2), lineWidth: 1)
                 )
         )
     }
@@ -76,26 +76,27 @@ struct ScanButton: View {
         } label: {
             HStack(spacing: 7) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 14, weight: .regular))
                 Text("Scan")
-                    .font(.system(size: 13.5, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
+                    .kerning(-0.2)
             }
-            .foregroundStyle(hovering ? T.txt1 : T.txt2)
+            .foregroundStyle(hovering ? T.t1 : T.t2)
             .frame(maxWidth: .infinity)
-            .frame(height: 46)
+            .frame(height: 44)
             .background(
-                RoundedRectangle(cornerRadius: 11)
-                    .fill(hovering ? T.bgFloat : T.bgHover)
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(hovering ? T.bgHover : T.bgActive)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 11)
-                            .strokeBorder(hovering ? T.borderHi : T.borderMid, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(hovering ? T.b3 : T.b2, lineWidth: 1)
                     )
             )
         }
         .buttonStyle(.plain)
         .disabled(scanner.isScanning)
         .opacity(scanner.isScanning ? 0.5 : 1.0)
-        .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { hovering = h } }
+        .onHover { h in withAnimation(.easeInOut(duration: 0.15)) { hovering = h } }
     }
 }
 
@@ -112,32 +113,32 @@ struct CleanButton: View {
             guard let result = scanner.scanResult else { return }
             Task {
                 await cleaner.clean(items: result.items.filter { $0.isSelected })
-                // We don't auto-scan here, the user can scan again if they want
             }
         } label: {
             HStack(spacing: 7) {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 14, weight: .medium))
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .regular))
                 Text("Clean All")
-                    .font(.system(size: 13.5, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
+                    .kerning(-0.2)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 46)
+            .frame(height: 44)
             .background(
                 ZStack {
-                    RoundedRectangle(cornerRadius: 11)
-                        .fill(T.accGrad)
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(T.pGrad)
                     
-                    RoundedRectangle(cornerRadius: 11)
+                    RoundedRectangle(cornerRadius: 10)
                         .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
                 }
-                .shadow(color: T.accGlow, radius: hovering ? 26 : 18, y: hovering ? 6 : 3)
+                .shadow(color: T.pGlow, radius: hovering ? 24 : 16, y: hovering ? 4 : 2)
             )
         }
         .buttonStyle(.plain)
         .disabled(!canClean)
-        .opacity(canClean ? 1.0 : 0.3)
+        .opacity(canClean ? 1.0 : 0.28)
         .scaleEffect(hovering && canClean ? 1.01 : 1.0)
         .offset(y: hovering && canClean ? -1 : 0)
         .onHover { h in withAnimation(.easeInOut(duration: 0.15)) { hovering = h } }

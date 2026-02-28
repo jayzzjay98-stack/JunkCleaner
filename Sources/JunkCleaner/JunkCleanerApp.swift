@@ -24,8 +24,7 @@ struct JunkCleanerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
-        .defaultSize(width: 860, height: 620)
+        .defaultSize(width: 920, height: 620)
         .commands { CommandGroup(replacing: .newItem) {} }
     }
 }
-

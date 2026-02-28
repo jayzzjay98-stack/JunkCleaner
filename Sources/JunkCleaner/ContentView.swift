@@ -13,14 +13,11 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             // Background void color
-            T.bgVoid.ignoresSafeArea()
+            T.bgApp.ignoresSafeArea()
 
-            // Main App Container
+            // Main App Container (920 x 620)
             HStack(spacing: 0) {
                 AppSidebar(scanner: scanner, cleaner: cleaner)
-
-                // Divider line matches mockup's Sidebar boundary
-                // We're already drawing a 1px border on its right side in AppSidebar.
 
                 MainContentView(
                     scanner: scanner,
@@ -28,15 +25,28 @@ struct ContentView: View {
                     showResult: $showResult
                 )
             }
-            .background(T.bgBase)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .background(T.bgMain)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(T.borderMid, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(T.b1, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.65), radius: 60, x: 0, y: 30)
+            // Layered premium shadow from mockup
+            .shadow(color: .black.opacity(0.8), radius: 1, x: 0, y: 0)
+            .shadow(color: .black.opacity(0.7), radius: 64, x: 0, y: 32)
+            .shadow(color: .black.opacity(0.5), radius: 24, x: 0, y: 8)
+            .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
+            // Top highlight
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [.clear, Color.white.opacity(0.07), Color.white.opacity(0.07), .clear],
+                    startPoint: .leading, endPoint: .trailing
+                )
+                .frame(height: 1)
+                .padding(.horizontal, 10)
+            }
             .padding(40) // Spacing for window shadow
-            .frame(width: 900 + 80, height: 620 + 80)
+            .frame(width: 920 + 80, height: 620 + 80)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
@@ -44,7 +54,7 @@ struct ContentView: View {
                     }
             )
         }
-        .frame(minWidth: 900, minHeight: 620)
+        .frame(minWidth: 920, minHeight: 620)
         .onAppear {
             UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound]) { _, _ in }

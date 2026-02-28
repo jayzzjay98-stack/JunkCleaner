@@ -10,22 +10,22 @@ struct SuccessBanner: View {
                 // Success icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 7)
-                        .fill(T.ok.opacity(0.14))
-                        .frame(width: 30, height: 30)
+                        .fill(T.ok.opacity(0.12))
+                        .frame(width: 28, height: 28)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(T.ok)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Freed \(result.formattedFreed)")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(T.ok)
                         .kerning(-0.2)
                     
                     Text("\(result.deletedCount) files deleted · system is clean")
-                        .font(.system(size: 10.5, weight: .regular, design: .monospaced))
-                        .foregroundStyle(T.txt3)
+                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                        .foregroundStyle(T.t3)
                 }
 
                 Spacer()
@@ -35,7 +35,7 @@ struct SuccessBanner: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(T.txt3)
+                        .foregroundStyle(T.t3)
                         .frame(width: 22, height: 22)
                         .background(T.bgHover, in: RoundedRectangle(cornerRadius: 6))
                 }
@@ -44,11 +44,11 @@ struct SuccessBanner: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 9)
-                    .fill(T.ok.opacity(0.08))
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(T.ok.opacity(0.07))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 9)
-                            .strokeBorder(T.ok.opacity(0.18), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(T.ok.opacity(0.16), lineWidth: 1)
                     )
             )
             .padding(.horizontal, 18)
@@ -56,7 +56,7 @@ struct SuccessBanner: View {
             .transition(.move(edge: .top).combined(with: .opacity))
         }
 
-        // Error state (optional, keep simple)
+        // Error state
         if let error = cleaner.failedItems.first?.reason, !showResult {
             HStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -64,17 +64,17 @@ struct SuccessBanner: View {
                     .font(.system(size: 13))
                 Text(error)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(T.txt2)
+                    .foregroundStyle(T.t2)
                     .lineLimit(2)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 9)
+                RoundedRectangle(cornerRadius: 8)
                     .fill(T.warn.opacity(0.08))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 9)
+                        RoundedRectangle(cornerRadius: 8)
                             .strokeBorder(T.warn.opacity(0.18), lineWidth: 1)
                     )
             )
