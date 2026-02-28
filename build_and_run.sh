@@ -1,23 +1,23 @@
 #!/bin/bash
 set -e
 
-echo "🔨 Building JunkCleaner (Window App)..."
+echo "🔨 Building JunkCleaner..."
 swift build -c release 2>&1
 
-BINARY=".build/release/JunkCleaner"
-
 echo ""
-echo "📦 Creating .app bundle..."
+echo "📦 Packaging .app bundle..."
 
-APP_DIR="JunkCleaner.app/Contents/MacOS"
-RES_DIR="JunkCleaner.app/Contents/Resources"
+APP="JunkCleaner.app"
+rm -rf "$APP"
+mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/Resources"
 
-mkdir -p "$APP_DIR"
-mkdir -p "$RES_DIR"
+cp ".build/release/JunkCleaner" "$APP/Contents/MacOS/JunkCleaner"
+cp "Info.plist"                  "$APP/Contents/Info.plist"
+cp "AppIcon.icns"                "$APP/Contents/Resources/AppIcon.icns" 2>/dev/null || true
 
-cp "$BINARY" "$APP_DIR/JunkCleaner"
-cp "Info.plist" "JunkCleaner.app/Contents/Info.plist"
-cp "AppIcon.icns" "$RES_DIR/AppIcon.icns" 2>/dev/null || true
+chmod +x "$APP/Contents/MacOS/JunkCleaner"
 
-echo "✅ Done! Running app..."
-open "JunkCleaner.app"
+echo "✅ Build complete → $APP"
+echo "🚀 Launching..."
+open "$APP"

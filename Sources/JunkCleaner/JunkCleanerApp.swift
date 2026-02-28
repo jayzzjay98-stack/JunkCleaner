@@ -11,14 +11,12 @@ struct JunkCleanerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
-        .defaultSize(width: 420, height: 720)
+        .defaultSize(width: 420, height: 690)
         .commands {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(after: .appInfo) {
-                Button("Scan") {
-                    Task { await scanner.startScan() }
-                }
-                .keyboardShortcut("s", modifiers: [.command])
+                Button("Scan") { Task { await scanner.startScan() } }
+                    .keyboardShortcut("s", modifiers: [.command])
             }
         }
     }
