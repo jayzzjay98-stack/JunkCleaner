@@ -8,8 +8,8 @@
     <string>com.yourname.junkcleaner</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
-    <key>LSUIElement</key>
-    <true/>          <!-- ซ่อนจาก Dock, แสดงแค่ใน Menu Bar -->
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>JunkCleaner needs AppleScript to remove files requiring administrator privileges.</string>
     <key>NSDesktopFolderUsageDescription</key>
