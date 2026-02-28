@@ -297,7 +297,7 @@ struct MenuBarView: View {
                     cleanButton(icon: "🗑", label: "Clean All") {
                         guard let result = scanner.scanResult else { return }
                         Task {
-                            await cleaner.clean(items: result.items.filter { $0.isSelected }, requireAuth: false)
+                            await cleaner.clean(items: result.items.filter { $0.isSelected })
                         }
                     }
                     .disabled(scanner.scanResult == nil || scanner.scanResult!.items.isEmpty || scanner.isScanning)

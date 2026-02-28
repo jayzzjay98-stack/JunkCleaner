@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import LocalAuthentication
 
 @Observable
 final class JunkCleaner {
@@ -29,16 +28,13 @@ final class JunkCleaner {
     private let fm = FileManager.default
 
     // MARK: - Main Clean
-    func clean(items: [JunkItem], requireAuth: Bool = true) async {
+    func clean(items: [JunkItem]) async {
         guard !isDeleting else { return }
 
-        // Touch ID authentication
-        if requireAuth {
-            let authSuccess = await authenticate(reason: "JunkCleaner needs to delete \(items.count) junk files")
-            guard authSuccess else {
-                await MainActor.run { self.lastResult = CleanResult(freedBytes: 0, deletedCount: 0, failedCount: 0, duration: 0) }
-                return
-            }
+        // Setup sudoers ก่อน loop ลบไฟล์ หากยกเลิกให้หยุดการทำงาน
+        if !setupAdminOnce() {
+            await MainActor.run { self.lastResult = CleanResult(freedBytes: 0, deletedCount: 0, failedCount: 0, duration: 0) }
+            return
         }
 
         await MainActor.run {
@@ -124,37 +120,37 @@ final class JunkCleaner {
         }
     }
 
-    // MARK: - Admin delete ผ่าน AppleScript
+    // MARK: - Admin delete ผ่าน Process sudo
     private func deleteWithAdmin(path: String) async throws {
-        let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
-        let script = "do shell script \"rm -rf '\(escaped)'\" with administrator privileges"
+        var p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+        p.arguments = ["-n", "/bin/rm", "-rf", path]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
         
-        var errorDict: NSDictionary?
-        if let appleScript = NSAppleScript(source: script) {
-            appleScript.executeAndReturnError(&errorDict)
-        } else {
-            throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize AppleScript"])
-        }
-        
-        // ถ้า fail ให้ลอง retry ท่า Process() sudo rm -rf
-        if let err = errorDict {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-            p.arguments = ["rm", "-rf", path]
-            p.standardOutput = FileHandle.nullDevice
-            p.standardError = FileHandle.nullDevice
-            
-            do {
+        do {
+            try p.run()
+            p.waitUntilExit()
+            if p.terminationStatus != 0 {
+                // ถ้า sudo -n fail แสดงว่า sudoers ยังไม่ได้ setup -> fallback
+                if !setupAdminOnce() {
+                    throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: "Admin setup failed or cancelled"])
+                }
+                
+                // ลองใหม่อีกครั้ง
+                p = Process()
+                p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+                p.arguments = ["-n", "/bin/rm", "-rf", path]
+                p.standardOutput = FileHandle.nullDevice
+                p.standardError = FileHandle.nullDevice
                 try p.run()
                 p.waitUntilExit()
                 if p.terminationStatus != 0 {
-                    let msg = err[NSAppleScript.errorMessage] as? String ?? "Admin delete failed"
-                    throw NSError(domain: "JunkCleaner", code: Int(p.terminationStatus), userInfo: [NSLocalizedDescriptionKey: msg])
+                    throw NSError(domain: "JunkCleaner", code: Int(p.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "Admin delete failed after setup"])
                 }
-            } catch {
-                let msg = err[NSAppleScript.errorMessage] as? String ?? "Admin delete failed"
-                throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: msg])
             }
+        } catch {
+            throw NSError(domain: "JunkCleaner", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to run sudo process: \(error.localizedDescription)"])
         }
     }
 
@@ -175,19 +171,16 @@ final class JunkCleaner {
         appleScript?.executeAndReturnError(&err)
     }
 
-    // MARK: - Touch ID Authentication
-    private func authenticate(reason: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            let context = LAContext()
-            var error: NSError?
-            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, _ in
-                    continuation.resume(returning: success)
-                }
-            } else {
-                // Touch ID ไม่มี → ข้ามได้เลย
-                continuation.resume(returning: true)
-            }
+    // MARK: - Admin Setup
+    private func setupAdminOnce() -> Bool {
+        let user = NSUserName()
+        let script = """
+        do shell script "mkdir -p /private/etc/sudoers.d && echo '\(user) ALL=(ALL) NOPASSWD: /bin/rm' > /private/etc/sudoers.d/junkcleaner_\(user) && chmod 440 /private/etc/sudoers.d/junkcleaner_\(user)" with prompt "JunkCleaner ต้องการรหัสผ่านครั้งเดียว เพื่อเปิดใช้ Touch ID สำหรับการลบไฟล์ในอนาคต" with administrator privileges
+        """
+        var errorDict: NSDictionary?
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(&errorDict)
         }
+        return errorDict == nil
     }
 }
