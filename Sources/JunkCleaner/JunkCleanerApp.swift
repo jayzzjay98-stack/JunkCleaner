@@ -8,11 +8,11 @@ struct JunkCleanerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(scanner: scanner, cleaner: cleaner)
+            ContentView(scanner: scanner, cleaner: cleaner)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.automatic)
-        .defaultSize(width: 1180, height: 820)
+        .defaultSize(width: 860, height: 620)
         .commands { CommandGroup(replacing: .newItem) {} }
     }
 }

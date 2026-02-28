@@ -11,10 +11,18 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            DS.bgSecondary.ignoresSafeArea()
+            DS.bgPrimary.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                TitleBar(scanner: scanner)
+            HStack(spacing: 0) {
+                // Sidebar with traffic lights built-in
+                AppSidebar()
+
+                // Divider
+                Rectangle()
+                    .fill(DS.borderSubtle)
+                    .frame(width: 1)
+
+                // Main content (no separate TitleBar)
                 MainContentView(
                     scanner: scanner,
                     cleaner: cleaner,
@@ -22,13 +30,19 @@ struct ContentView: View {
                 )
             }
         }
-        .frame(width: 480, height: 660)
+        .frame(width: 860, height: 620)
         .clipShape(RoundedRectangle(cornerRadius: DS.radiusApp))
         .overlay(
             RoundedRectangle(cornerRadius: DS.radiusApp)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
         .shadow(color: DS.shadowApp, radius: 60, x: 0, y: 30)
+        .gesture(
+            DragGesture()
+                .onChanged { _ in
+                    NSApplication.shared.keyWindow?.performDrag(with: NSApp.currentEvent ?? NSEvent())
+                }
+        )
         .onChange(of: cleaner.isDeleting) { _, isDeleting in
             if !isDeleting, cleaner.lastResult != nil {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {

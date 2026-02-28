@@ -1,130 +1,141 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Sidebar  (w-24 md:w-64 in HTML)
-struct SidebarView: View {
-    @State private var active: SideTab = .dashboard
+// MARK: - Sidebar  (only Cleaner + Settings)
+struct AppSidebar: View {
+    @State private var activeTab: AppTab = .cleaner
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // ── Logo (p-8) ──────────────────────────────────────────────
-            HStack(spacing: 12) {
+            // ── Traffic Lights (top-left, macOS style) ──────────────────
+            HStack(spacing: 7) {
+                SidebarTrafficDot(color: Color(hex: "#ff5f57")) { NSApplication.shared.terminate(nil) }
+                SidebarTrafficDot(color: Color(hex: "#febc2e")) { NSApplication.shared.keyWindow?.miniaturize(nil) }
+                SidebarTrafficDot(color: Color(hex: "#28c840")) { NSApplication.shared.keyWindow?.zoom(nil) }
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 20)
+
+            // ── Logo ────────────────────────────────────────────────────
+            HStack(spacing: 10) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(T.primaryGradient)
-                        .frame(width: 32, height: 32)
-                        .shadow(color: T.violet400.opacity(0.5), radius: 8)
-                    Image(systemName: "sparkles")
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(DS.gradientAccent)
+                        .frame(width: 34, height: 34)
+                        .shadow(color: DS.glowAccent, radius: 8)
+                    Image(systemName: "trash.fill")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.white)
                 }
                 Text("NeoClean")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(T.textWhite)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(DS.textPrimary)
             }
-            .padding(.horizontal, 28)
-            .padding(.top, 28)
-            .padding(.bottom, 28)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 32)
 
-            // ── Nav (flex-1, gap-2, py-8) ───────────────────────────────
+            // ── Nav Items ───────────────────────────────────────────────
             VStack(spacing: 4) {
-                ForEach(SideTab.navItems) { tab in
-                    SideNavRow(tab: tab, isActive: active == tab) {
-                        active = tab
+                ForEach(AppTab.allCases, id: \.self) { tab in
+                    if tab != .settings {
+                        AppTabRow(tab: tab, isActive: activeTab == tab) {
+                            activeTab = tab
+                        }
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
 
             Spacer()
 
-            // ── Bottom nav ──────────────────────────────────────────────
-            Divider()
-                .background(T.glassBorder)
-                .padding(.horizontal, 16)
-
-            SideNavRow(tab: .settings, isActive: active == .settings) {
-                active = .settings
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-        .frame(width: 240)
-        .background(
-            T.glassSurface.opacity(0.3)
-        )
-        .overlay(alignment: .trailing) {
+            // ── Bottom: Settings ────────────────────────────────────────
             Rectangle()
-                .fill(T.glassBorder)
-                .frame(width: 1)
+                .fill(DS.borderSubtle)
+                .frame(height: 1)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+
+            AppTabRow(tab: .settings, isActive: activeTab == .settings) {
+                activeTab = .settings
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 16)
         }
+        .frame(width: 220)
+        .background(DS.bgSecondary)
     }
 }
 
-// MARK: - Tab definition
-enum SideTab: String, CaseIterable, Identifiable {
-    case dashboard   = "Dashboard"
-    case optimizer   = "Optimization"
-    case protection  = "Protection"
-    case cleaner     = "Cleaner"
-    case settings    = "Settings"
-
-    var id: String { rawValue }
-
-    static var navItems: [SideTab] { [.dashboard, .optimizer, .protection, .cleaner] }
+// MARK: - Tab enum (only 2 items)
+enum AppTab: String, CaseIterable {
+    case cleaner  = "Junk Cleaner"
+    case settings = "Settings"
 
     var icon: String {
         switch self {
-        case .dashboard:  return "square.grid.2x2.fill"
-        case .optimizer:  return "rocket.fill"
-        case .protection: return "shield.fill"
-        case .cleaner:    return "folder.badge.minus"
-        case .settings:   return "gearshape.fill"
+        case .cleaner:  return "folder.badge.minus"
+        case .settings: return "gearshape.fill"
         }
     }
 }
 
-// MARK: - Nav row
-struct SideNavRow: View {
-    let tab: SideTab
+// MARK: - Tab Row
+struct AppTabRow: View {
+    let tab: AppTab
     let isActive: Bool
     let action: () -> Void
     @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 17, weight: .medium))
-                    .scaleEffect(hovering ? 1.10 : 1.0)
-                    .animation(.easeInOut(duration: 0.15), value: hovering)
+                    .font(.system(size: 16, weight: .medium))
                     .frame(width: 22)
+                    .foregroundStyle(isActive ? .white : DS.textSecondary.opacity(hovering ? 1 : 0.7))
                 Text(tab.rawValue)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(isActive ? .white : DS.textSecondary.opacity(hovering ? 1 : 0.7))
                 Spacer()
             }
-            .foregroundStyle(isActive ? T.textWhite : T.slate300.opacity(hovering ? 1 : 0.7))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: DS.radiusNavItem)
                     .fill(
                         isActive
-                        ? T.primary.opacity(0.20)
-                        : (hovering ? T.glassHover : Color.clear)
+                        ? DS.violet.opacity(0.22)
+                        : (hovering ? Color.white.opacity(0.04) : Color.clear)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(
-                                isActive ? T.primary.opacity(0.30) : Color.clear,
-                                lineWidth: 1
-                            )
+                        RoundedRectangle(cornerRadius: DS.radiusNavItem)
+                            .strokeBorder(isActive ? DS.violet.opacity(0.35) : Color.clear, lineWidth: 1)
                     )
             )
-            .shadow(color: isActive ? T.violet400.opacity(0.3) : .clear, radius: 8)
+            .shadow(color: isActive ? DS.glowAccent : .clear, radius: 6)
         }
         .buttonStyle(.plain)
         .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { hovering = h } }
     }
 }
+
+// MARK: - Traffic Dot
+struct SidebarTrafficDot: View {
+    let color: Color
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 12, height: 12)
+            .scaleEffect(hovering ? 1.15 : 1.0)
+            .brightness(hovering ? 0.1 : 0)
+            .animation(.easeInOut(duration: 0.12), value: hovering)
+            .onHover { h in hovering = h }
+            .onTapGesture { action() }
+    }
+}
+
