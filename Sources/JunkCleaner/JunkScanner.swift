@@ -72,6 +72,10 @@ final class JunkScanner {
     }
 
     func cancelScan() {
+        scanResult = nil
+        totalJunkGB = 0
+        scanProgress = 0
+        currentScanTask = ""
         isCancelled = true
         isScanning = false
     }

@@ -139,12 +139,16 @@ struct JunkItem: Identifiable, Hashable {
     }
 }
 
-struct ScanResult {
+struct ScanResult: Equatable {
     var items: [JunkItem] = []
     var scanDuration: TimeInterval = 0
     var totalSize: Int64 { items.filter(\.isSelected).reduce(0) { $0 + $1.sizeBytes } }
     var itemsByType: [JunkType: [JunkItem]] { Dictionary(grouping: items) { $0.type } }
     var itemsByApp: [String: [JunkItem]] {
         Dictionary(grouping: items.filter { $0.relatedApp != nil }) { $0.relatedApp! }
+    }
+
+    static func == (lhs: ScanResult, rhs: ScanResult) -> Bool {
+        lhs.items == rhs.items && lhs.scanDuration == rhs.scanDuration
     }
 }

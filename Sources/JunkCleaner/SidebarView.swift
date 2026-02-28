@@ -1,58 +1,61 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Sidebar  (only Cleaner + Settings)
+// MARK: - Sidebar (Cleaner + Settings only, with traffic lights)
 struct AppSidebar: View {
+    @Bindable var scanner: JunkScanner
+    @Bindable var cleaner: JunkCleaner
     @State private var activeTab: AppTab = .cleaner
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // ── Traffic Lights (top-left, macOS style) ──────────────────
+            // ── Traffic lights ────────────────────────────────────────────
             HStack(spacing: 7) {
-                SidebarTrafficDot(color: Color(hex: "#ff5f57")) { NSApplication.shared.terminate(nil) }
-                SidebarTrafficDot(color: Color(hex: "#febc2e")) { NSApplication.shared.keyWindow?.miniaturize(nil) }
-                SidebarTrafficDot(color: Color(hex: "#28c840")) { NSApplication.shared.keyWindow?.zoom(nil) }
+                SidebarDot(color: Color(hex: "#ff5f57")) { NSApplication.shared.terminate(nil) }
+                SidebarDot(color: Color(hex: "#febc2e")) { NSApplication.shared.keyWindow?.miniaturize(nil) }
+                SidebarDot(color: Color(hex: "#28c840")) { NSApplication.shared.keyWindow?.zoom(nil) }
             }
-            .padding(.leading, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 20)
+            .padding(.leading, 22)
+            .padding(.top, 22)
+            .padding(.bottom, 22)
 
-            // ── Logo ────────────────────────────────────────────────────
+            // ── Logo ─────────────────────────────────────────────────────
             HStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 9)
-                        .fill(DS.gradientAccent)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "#667eea"), Color(hex: "#764ba2"), Color(hex: "#a78bfa")],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
                         .frame(width: 34, height: 34)
-                        .shadow(color: DS.glowAccent, radius: 8)
+                        .shadow(color: Color(hex: "#667eea").opacity(0.4), radius: 8)
                     Image(systemName: "trash.fill")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.white)
                 }
                 Text("NeoClean")
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(DS.textPrimary)
+                    .foregroundStyle(.white)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 32)
+            .padding(.bottom, 30)
 
-            // ── Nav Items ───────────────────────────────────────────────
+            // ── Nav: Junk Cleaner only ────────────────────────────────────
             VStack(spacing: 4) {
-                ForEach(AppTab.allCases, id: \.self) { tab in
-                    if tab != .settings {
-                        AppTabRow(tab: tab, isActive: activeTab == tab) {
-                            activeTab = tab
-                        }
-                    }
+                AppTabRow(tab: .cleaner, isActive: activeTab == .cleaner) {
+                    activeTab = .cleaner
                 }
             }
             .padding(.horizontal, 12)
 
             Spacer()
 
-            // ── Bottom: Settings ────────────────────────────────────────
+            // ── Settings at bottom ────────────────────────────────────────
             Rectangle()
-                .fill(DS.borderSubtle)
+                .fill(Color.white.opacity(0.06))
                 .frame(height: 1)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
@@ -61,14 +64,14 @@ struct AppSidebar: View {
                 activeTab = .settings
             }
             .padding(.horizontal, 12)
-            .padding(.bottom, 16)
+            .padding(.bottom, 18)
         }
         .frame(width: 220)
-        .background(DS.bgSecondary)
+        .background(Color(hex: "#12121c"))
     }
 }
 
-// MARK: - Tab enum (only 2 items)
+// MARK: - Tab enum
 enum AppTab: String, CaseIterable {
     case cleaner  = "Junk Cleaner"
     case settings = "Settings"
@@ -92,37 +95,39 @@ struct AppTabRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 15, weight: .medium))
                     .frame(width: 22)
-                    .foregroundStyle(isActive ? .white : DS.textSecondary.opacity(hovering ? 1 : 0.7))
+                    .foregroundStyle(isActive ? .white : Color.white.opacity(hovering ? 0.8 : 0.45))
                 Text(tab.rawValue)
-                    .font(.system(size: 13.5, weight: .medium))
-                    .foregroundStyle(isActive ? .white : DS.textSecondary.opacity(hovering ? 1 : 0.7))
+                    .font(.system(size: 13.5, weight: isActive ? .semibold : .medium))
+                    .foregroundStyle(isActive ? .white : Color.white.opacity(hovering ? 0.8 : 0.45))
                 Spacer()
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .background(
-                RoundedRectangle(cornerRadius: DS.radiusNavItem)
+                RoundedRectangle(cornerRadius: 11)
                     .fill(
                         isActive
-                        ? DS.violet.opacity(0.22)
+                        ? Color(hex: "#667eea").opacity(0.20)
                         : (hovering ? Color.white.opacity(0.04) : Color.clear)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: DS.radiusNavItem)
-                            .strokeBorder(isActive ? DS.violet.opacity(0.35) : Color.clear, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 11)
+                            .strokeBorder(
+                                isActive ? Color(hex: "#667eea").opacity(0.35) : Color.clear,
+                                lineWidth: 1
+                            )
                     )
             )
-            .shadow(color: isActive ? DS.glowAccent : .clear, radius: 6)
         }
         .buttonStyle(.plain)
         .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { hovering = h } }
     }
 }
 
-// MARK: - Traffic Dot
-struct SidebarTrafficDot: View {
+// MARK: - Traffic Light Dot
+struct SidebarDot: View {
     let color: Color
     let action: () -> Void
     @State private var hovering = false
@@ -133,9 +138,8 @@ struct SidebarTrafficDot: View {
             .frame(width: 12, height: 12)
             .scaleEffect(hovering ? 1.15 : 1.0)
             .brightness(hovering ? 0.1 : 0)
-            .animation(.easeInOut(duration: 0.12), value: hovering)
+            .animation(.easeInOut(duration: 0.1), value: hovering)
             .onHover { h in hovering = h }
             .onTapGesture { action() }
     }
 }
-

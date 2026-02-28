@@ -64,7 +64,7 @@ struct RootView: View {
 
             // ── main glass container ────────────────────────────────────
             HStack(spacing: 0) {
-                AppSidebar()
+                AppSidebar(scanner: scanner, cleaner: cleaner)
                 MainContentView(
                     scanner: scanner,
                     cleaner: cleaner,

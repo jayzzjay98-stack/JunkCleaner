@@ -10,33 +10,27 @@ struct ContentView: View {
     @State private var resultTimer: Timer?
 
     var body: some View {
-        ZStack {
-            DS.bgPrimary.ignoresSafeArea()
+        HStack(spacing: 0) {
+            AppSidebar(scanner: scanner, cleaner: cleaner)
 
-            HStack(spacing: 0) {
-                // Sidebar with traffic lights built-in
-                AppSidebar()
+            Rectangle()
+                .fill(Color.white.opacity(0.06))
+                .frame(width: 1)
 
-                // Divider
-                Rectangle()
-                    .fill(DS.borderSubtle)
-                    .frame(width: 1)
-
-                // Main content (no separate TitleBar)
-                MainContentView(
-                    scanner: scanner,
-                    cleaner: cleaner,
-                    showResult: $showResult
-                )
-            }
+            MainContentView(
+                scanner: scanner,
+                cleaner: cleaner,
+                showResult: $showResult
+            )
         }
         .frame(width: 860, height: 620)
-        .clipShape(RoundedRectangle(cornerRadius: DS.radiusApp))
+        .background(Color(hex: "#0c0c12"))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(
-            RoundedRectangle(cornerRadius: DS.radiusApp)
+            RoundedRectangle(cornerRadius: 20)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
-        .shadow(color: DS.shadowApp, radius: 60, x: 0, y: 30)
+        .shadow(color: .black.opacity(0.85), radius: 60, x: 0, y: 30)
         .gesture(
             DragGesture()
                 .onChanged { _ in
