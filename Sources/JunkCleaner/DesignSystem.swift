@@ -1,39 +1,37 @@
 import SwiftUI
 
-// MARK: - Design Tokens
+// MARK: - Design Tokens (Updated to match mockup HTML)
 enum DS {
 
     // MARK: Colors
-    static let bgPrimary     = Color(hex: "#0c0c12")
-    static let bgSecondary   = Color(hex: "#12121c")
-    static let bgTertiary    = Color(hex: "#18182a")
-    static let bgQuaternary  = Color(hex: "#1e1e30")
+    static let bgPrimary     = T.bgVoid
+    static let bgSecondary   = T.bgBase
+    static let bgTertiary    = T.bgRaised
+    static let bgQuaternary  = T.bgFloat
 
-    static let borderSubtle  = Color.white.opacity(0.06)
-    static let borderDefault = Color.white.opacity(0.10)
+    static let borderSubtle  = T.borderDim
+    static let borderDefault = T.borderMid
 
-    static let textPrimary   = Color(hex: "#f0f0ff")
-    static let textSecondary = Color(hex: "#8b8baa")
-    static let textTertiary  = Color(hex: "#4a4a6a")
+    static let textPrimary   = T.txt1
+    static let textSecondary = T.txt2
+    static let textTertiary  = T.txt3
 
     // Accent palette
-    static let violet        = Color(hex: "#667eea")
-    static let purple        = Color(hex: "#764ba2")
-    static let lavender      = Color(hex: "#a78bfa")
-    static let indigo        = Color(hex: "#818cf8")
+    static let violet        = T.acc
+    static let purple        = Color(hex: "#6c5ce7")
+    static let lavender      = T.accLight
+    static let indigo        = Color(hex: "#8b7cf8")
 
     // Semantic
-    static let success       = Color(hex: "#34d399")
-    static let successDim    = Color(hex: "#34d399").opacity(0.12)
-    static let successBorder = Color(hex: "#34d399").opacity(0.2)
-    static let warning       = Color(hex: "#f97316")
+    static let success       = T.ok
+    static let successDim    = T.ok.opacity(0.12)
+    static let successBorder = T.ok.opacity(0.2)
+    static let warning       = T.warn
     static let warningAmber  = Color(hex: "#fbbf24")
 
     // MARK: Gradients
-    static let gradientAccent = LinearGradient(
-        colors: [violet, purple, lavender],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
+    static let gradientAccent = T.accGrad
+    
     static let gradientHeroText = LinearGradient(
         colors: [Color.white, indigo.opacity(0.8)],
         startPoint: .topLeading, endPoint: .bottomTrailing
@@ -54,48 +52,33 @@ enum DS {
         colors: [violet, lavender, Color(hex: "#f093fb")],
         startPoint: .leading, endPoint: .trailing
     )
-    static let gradientNavIndicator = LinearGradient(
-        colors: [violet, lavender],
-        startPoint: .top, endPoint: .bottom
-    )
+    static let gradientNavIndicator = T.accGrad
 
-    // Ring gradients (as AngularGradient for donut)
-    static func ringGradient(for state: RingState) -> AngularGradient {
+    // Ring gradients
+    static func ringGradient(for state: RingState) -> LinearGradient {
         switch state {
-        case .idle:
-            return AngularGradient(
-                colors: [violet, lavender, violet],
-                center: .center, startAngle: .degrees(0), endAngle: .degrees(360)
-            )
-        case .junk:
-            return AngularGradient(
-                colors: [warning, warningAmber, warning],
-                center: .center, startAngle: .degrees(0), endAngle: .degrees(360)
-            )
-        case .clean:
-            return AngularGradient(
-                colors: [success, Color(hex: "#6ee7b7"), success],
-                center: .center, startAngle: .degrees(0), endAngle: .degrees(360)
-            )
+        case .idle:  return T.accGrad
+        case .junk:  return LinearGradient(colors: [T.warn, Color(hex: "#fbbf24")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .clean: return LinearGradient(colors: [T.ok, Color(hex: "#6ee7b7")], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 
     // MARK: Shadows
     static let shadowApp   = Color.black.opacity(0.85)
-    static let glowAccent  = violet.opacity(0.35)
-    static let glowSuccess = success.opacity(0.3)
-    static let glowJunk    = warning.opacity(0.3)
+    static let glowAccent  = T.accGlow
+    static let glowSuccess = T.okGlow
+    static let glowJunk    = T.warnGlow
 
     // MARK: Corner Radii
-    static let radiusApp     : CGFloat = 22
+    static let radiusApp     : CGFloat = 16 // Mockup uses 16px
     static let radiusCard    : CGFloat = 13
     static let radiusChip    : CGFloat = 12
     static let radiusItem    : CGFloat = 11
-    static let radiusButton  : CGFloat = 13
-    static let radiusLogo    : CGFloat = 7
-    static let radiusNavItem : CGFloat = 11
-    static let radiusIcon    : CGFloat = 10
-    static let radiusBanner  : CGFloat = 12
+    static let radiusButton  : CGFloat = 11 // Mockup uses 11px
+    static let radiusLogo    : CGFloat = 10 // Mockup uses 10px
+    static let radiusNavItem : CGFloat = 9  // Mockup uses 9px
+    static let radiusIcon    : CGFloat = 8  // Mockup uses 8px
+    static let radiusBanner  : CGFloat = 9  // Mockup uses 9px
 }
 
 enum RingState { case idle, junk, clean }
@@ -133,11 +116,26 @@ extension JunkType {
 
     var accentColor: Color {
         switch category {
-        case .devTools:    return DS.violet
-        case .browsers:    return Color(hex: "#8b5cf6")
-        case .systemJunk:  return Color(hex: "#f59e0b")
-        case .appLeftovers: return Color(hex: "#06b6d4")
-        case .other:       return DS.success
+        case .devTools:     return Color(hex: "#7c6af7")
+        case .browsers:     return Color(hex: "#818cf8")
+        case .systemJunk:   return Color(hex: "#f59e0b")
+        case .appLeftovers: return Color(hex: "#a78bfa")
+        case .other:        return Color(hex: "#34d399")
         }
     }
+    
+    var emoji: String {
+        switch category {
+        case .devTools:    return "🔨"
+        case .browsers:    return "🌐"
+        case .systemJunk:  return "💿"
+        case .appLeftovers: return "🗂️"
+        case .other:       return "📄"
+        }
+    }
+}
+
+extension JunkItem {
+    var accentColor: Color { type.accentColor }
+    var emoji: String { type.emoji }
 }

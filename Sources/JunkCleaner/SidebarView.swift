@@ -16,58 +16,57 @@ struct AppSidebar: View {
                 SidebarDot(color: Color(hex: "#febc2e")) { NSApplication.shared.keyWindow?.miniaturize(nil) }
                 SidebarDot(color: Color(hex: "#28c840")) { NSApplication.shared.keyWindow?.zoom(nil) }
             }
-            .padding(.leading, 22)
-            .padding(.top, 22)
-            .padding(.bottom, 22)
+            .padding(.leading, 18)
+            .padding(.top, 18)
+            .padding(.bottom, 20)
 
             // ── Logo ─────────────────────────────────────────────────────
-            HStack(spacing: 10) {
+            HStack(spacing: 11) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 9)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "#667eea"), Color(hex: "#764ba2"), Color(hex: "#a78bfa")],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 34, height: 34)
-                        .shadow(color: Color(hex: "#667eea").opacity(0.4), radius: 8)
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(T.accGrad)
+                        .frame(width: 36, height: 36)
+                        .shadow(color: T.accGlow, radius: 10, y: 3)
+                    
                     Image(systemName: "trash.fill")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                 }
-                Text("NeoClean")
+                Text("JunkClean")
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(T.txt1)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 30)
+            .padding(.horizontal, 18)
+            .padding(.bottom, 28)
 
-            // ── Nav: Junk Cleaner only ────────────────────────────────────
-            VStack(spacing: 4) {
+            // ── Nav Items ───────────────────────────────────────────────
+            VStack(spacing: 2) {
                 AppTabRow(tab: .cleaner, isActive: activeTab == .cleaner) {
                     activeTab = .cleaner
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
 
             Spacer()
 
-            // ── Settings at bottom ────────────────────────────────────────
+            // ── Bottom: Settings ────────────────────────────────────────
             Rectangle()
-                .fill(Color.white.opacity(0.06))
+                .fill(T.borderDim)
                 .frame(height: 1)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 4)
+                .padding(.bottom, 6)
 
             AppTabRow(tab: .settings, isActive: activeTab == .settings) {
                 activeTab = .settings
             }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 18)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 16)
         }
-        .frame(width: 220)
-        .background(Color(hex: "#12121c"))
+        .frame(width: 232)
+        .background(T.bgRaised)
+        .overlay(alignment: .trailing) {
+            Rectangle().fill(T.borderDim).frame(width: 1)
+        }
     }
 }
 
@@ -93,29 +92,31 @@ struct AppTabRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 16, weight: .medium))
                     .frame(width: 22)
-                    .foregroundStyle(isActive ? .white : Color.white.opacity(hovering ? 0.8 : 0.45))
+                    .foregroundStyle(isActive ? T.accLight : T.txt2.opacity(hovering ? 1 : 0.7))
+                
                 Text(tab.rawValue)
                     .font(.system(size: 13.5, weight: isActive ? .semibold : .medium))
-                    .foregroundStyle(isActive ? .white : Color.white.opacity(hovering ? 0.8 : 0.45))
+                    .foregroundStyle(isActive ? T.txt1 : T.txt2.opacity(hovering ? 1 : 0.7))
+                
                 Spacer()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 11)
+                RoundedRectangle(cornerRadius: 9)
                     .fill(
                         isActive
-                        ? Color(hex: "#667eea").opacity(0.20)
-                        : (hovering ? Color.white.opacity(0.04) : Color.clear)
+                        ? T.accDim
+                        : (hovering ? Color.white.opacity(0.038) : Color.clear)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 11)
+                        RoundedRectangle(cornerRadius: 9)
                             .strokeBorder(
-                                isActive ? Color(hex: "#667eea").opacity(0.35) : Color.clear,
+                                isActive ? T.acc.opacity(0.28) : Color.clear,
                                 lineWidth: 1
                             )
                     )
@@ -136,9 +137,9 @@ struct SidebarDot: View {
         Circle()
             .fill(color)
             .frame(width: 12, height: 12)
-            .scaleEffect(hovering ? 1.15 : 1.0)
+            .scaleEffect(hovering ? 1.1 : 1.0)
             .brightness(hovering ? 0.1 : 0)
-            .animation(.easeInOut(duration: 0.1), value: hovering)
+            .animation(.easeInOut(duration: 0.15), value: hovering)
             .onHover { h in hovering = h }
             .onTapGesture { action() }
     }

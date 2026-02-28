@@ -18,267 +18,270 @@ struct MainContentView: View {
             // ── Header ────────────────────────────────────────────────────
             AppHeader()
 
-            // ── Status row (Last scan + status badge) ─────────────────────
-            HStack(spacing: 12) {
-                LastScanBadge(scanner: scanner)
-                Spacer()
-                ScanStatusBadge(scanner: scanner)
-            }
-            .padding(.horizontal, 28)
-            .padding(.top, 20)
-            .padding(.bottom, 8)
-
             // ── Body ──────────────────────────────────────────────────────
             ZStack {
-                // Idle / scanning state: show circle
-                if viewMode == .idle || viewMode == .scanning {
-                    ScanCircleView(scanner: scanner)
-                        .transition(.opacity)
-                }
+                // Background base
+                T.bgBase.ignoresSafeArea()
 
-                // Results state: show junk list with back button
-                if viewMode == .results {
-                    ResultsView(
-                        scanner: scanner,
-                        cleaner: cleaner,
-                        showResult: $showResult,
-                        onBack: {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                viewMode = .idle
-                                scanner.cancelScan()
-                            }
+                VStack(spacing: 0) {
+                    // ── Status row ─────────────────────────────────────────────
+                    if viewMode != .results {
+                        HStack(spacing: 0) {
+                            BadgeView(label: "Last Scan", value: scanner.scanResult != nil ? "Just now" : "Never")
+                            Spacer()
+                            PillView(scanner: scanner)
                         }
-                    )
-                    .transition(.opacity)
+                        .padding(.horizontal, 26)
+                        .padding(.top, 18)
+                        .padding(.bottom, 6)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    // ── Main Area ──────────────────────────────────────────────
+                    ZStack {
+                        if viewMode == .idle || viewMode == .scanning {
+                            ScanCircleView(scanner: scanner)
+                                .transition(.opacity)
+                        }
+
+                        if viewMode == .results {
+                            ResultsView(
+                                scanner: scanner,
+                                cleaner: cleaner,
+                                showResult: $showResult,
+                                onBack: {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        viewMode = .idle
+                                        // We don't necessarily cancel the scan when going back,
+                                        // but we hide the results.
+                                    }
+                                }
+                            )
+                            .transition(.opacity)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // ── Action Bar ────────────────────────────────────────────────
             ActionBar(scanner: scanner, cleaner: cleaner)
         }
-        .background(Color(hex: "#0c0c12"))
-        // React to scan state changes
+        .background(T.bgBase)
         .onChange(of: scanner.isScanning) { _, isScanning in
-            withAnimation(.easeInOut(duration: 0.25)) {
-                viewMode = isScanning ? .scanning : viewMode
+            withAnimation(.easeInOut(duration: 0.3)) {
+                if isScanning {
+                    viewMode = .scanning
+                }
             }
         }
         .onChange(of: scanner.scanResult) { _, result in
-            if let r = result {
-                withAnimation(.easeInOut(duration: 0.3)) {
+            if let r = result, !scanner.isScanning {
+                withAnimation(.easeInOut(duration: 0.4)) {
                     viewMode = r.items.isEmpty ? .idle : .results
                 }
             }
         }
-        // Reset state each time the view appears (app re-opened / window shown)
         .onAppear {
-            viewMode = .idle
-            showResult = false
+            if scanner.scanResult != nil {
+                viewMode = .results
+            } else if scanner.isScanning {
+                viewMode = .scanning
+            } else {
+                viewMode = .idle
+            }
         }
     }
 }
 
-// MARK: - App Header (replaces SystemOverview)
+// MARK: - App Header
 struct AppHeader: View {
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text("System Overview")
-                    .font(.system(size: 20, weight: .light))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 19, weight: .light))
+                    .foregroundStyle(T.txt1)
+                    .kerning(-0.5)
+                
                 Text(macModelName)
-                    .font(.system(size: 12, weight: .light))
-                    .foregroundStyle(Color.white.opacity(0.45))
+                    .font(.system(size: 11.5, weight: .regular))
+                    .foregroundStyle(T.txt3)
             }
             Spacer()
         }
         .padding(.horizontal, 28)
-        .frame(height: 66)
-        .background(Color(hex: "#12121c"))
+        .frame(height: 64)
+        .background(T.bgRaised)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(T.borderDim).frame(height: 1)
         }
     }
 
-    // Returns the real Mac model name via sysctl
     private var macModelName: String {
         var size = 0
         sysctlbyname("hw.model", nil, &size, nil, 0)
         var buf = [CChar](repeating: 0, count: size)
         sysctlbyname("hw.model", &buf, &size, nil, 0)
-        let raw = String(cString: buf) // e.g. "Mac15,13"
-        // Map known identifiers to friendly names
-        if raw.hasPrefix("Mac16,") { return "MacBook Air M4" }   // 2025 Air M4
+        let raw = String(cString: buf)
+        if raw.hasPrefix("Mac16,") { return "MacBook Air M4" }
         if raw.hasPrefix("Mac15,") { return "MacBook Pro M3" }
         if raw.hasPrefix("Mac14,") { return "MacBook Pro M2" }
         if raw.hasPrefix("Mac13,") { return "MacBook Air M2" }
         if raw.hasPrefix("MacBookAir") { return "MacBook Air" }
         if raw.hasPrefix("MacBookPro") { return "MacBook Pro" }
-        if raw.hasPrefix("MacPro")     { return "Mac Pro" }
-        if raw.hasPrefix("MacMini")    { return "Mac Mini" }
-        if raw.hasPrefix("iMac")       { return "iMac" }
-        return "MacBook Air M4"   // default fallback
+        return "Mac15,13" // Mockup style fallback
     }
 }
 
-// MARK: - Last Scan Badge
-struct LastScanBadge: View {
-    let scanner: JunkScanner
-
+// MARK: - Badge View
+struct BadgeView: View {
+    let label: String
+    let value: String
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("LAST SCAN")
-                .font(.system(size: 9, weight: .semibold))
-                .kerning(1.0)
-                .foregroundStyle(Color.white.opacity(0.3))
-            Text(scanner.scanResult != nil ? "Just now" : "Never")
+            Text(label.uppercased())
+                .font(.system(size: 8.5, weight: .semibold))
+                .kerning(1.3)
+                .foregroundStyle(T.txt3)
+            
+            Text(value)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(T.txt1)
+                .kerning(-0.3)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(hex: "#18182a"))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
+            RoundedRectangle(cornerRadius: 10)
+                .fill(T.bgFloat)
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(T.borderDim, lineWidth: 1))
         )
     }
 }
 
-// MARK: - Scan Status Badge
-struct ScanStatusBadge: View {
+// MARK: - Pill View
+struct PillView: View {
     let scanner: JunkScanner
-
-    private var hasJunk: Bool { scanner.totalJunkGB > 0 && scanner.scanResult != nil }
+    
+    private var isOptimal: Bool { (scanner.scanResult?.items.count ?? 0) == 0 && !scanner.isScanning }
+    @State private var pulse = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 7) {
             Circle()
-                .fill(hasJunk ? Color(hex: "#f97316") : Color(hex: "#34d399"))
+                .fill(isOptimal ? T.ok : T.warn)
                 .frame(width: 8, height: 8)
-                .shadow(color: (hasJunk ? Color(hex: "#f97316") : Color(hex: "#34d399")).opacity(0.6), radius: 4)
-            Text(hasJunk ? "Junk Found" : "System Optimal")
+                .shadow(color: (isOptimal ? T.okGlow : T.warnGlow), radius: 6)
+                .opacity(pulse ? 0.6 : 1.0)
+                .scaleEffect(pulse ? 0.85 : 1.0)
+            
+            Text(isOptimal ? "System Optimal" : "Junk Found")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(T.txt1)
+                .kerning(-0.2)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(
             Capsule()
-                .fill(Color(hex: "#18182a"))
-                .overlay(Capsule().strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
+                .fill(T.bgFloat)
+                .overlay(Capsule().strokeBorder(T.borderDim, lineWidth: 1))
         )
+        .onAppear {
+            withAnimation(.easeInOut(duration: isOptimal ? 2.4 : 1.8).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
     }
 }
 
-// MARK: - Scan Circle (shown when idle or scanning)
+// MARK: - Scan Circle View
 struct ScanCircleView: View {
     let scanner: JunkScanner
     @State private var spinAngle: Double = 0
-
-    private var progress: Double {
-        scanner.isScanning ? scanner.scanProgress : 0
-    }
-
+    
+    private var progress: Double { scanner.isScanning ? scanner.scanProgress : 0 }
+    
     var body: some View {
         ZStack {
-            // Ambient glow
-            RadialGradient(
-                colors: [Color(hex: "#667eea").opacity(0.15), Color(hex: "#764ba2").opacity(0.08), .clear],
-                center: .center, startRadius: 50, endRadius: 200
-            )
-            .frame(width: 480, height: 400)
-
+            // Atmospheric glow
+            Circle()
+                .fill(RadialGradient(
+                    colors: [T.acc.opacity(0.14), T.acc.opacity(0.07), .clear],
+                    center: .center, startRadius: 0, endRadius: 210
+                ))
+                .frame(width: 420, height: 420)
+                .blur(radius: 20)
+            
             ZStack {
-                // Decorative outer rings
-                Circle().stroke(Color.white.opacity(0.03), lineWidth: 1).frame(width: 290)
-                Circle().stroke(Color.white.opacity(0.025), lineWidth: 1).frame(width: 330)
-
-                // Progress track
+                // Decorative Rings
+                Circle().stroke(Color.white.opacity(0.022), lineWidth: 1).frame(width: 250)
+                Circle().stroke(Color.white.opacity(0.022), lineWidth: 1).frame(width: 262)
+                
+                // Track
                 Circle()
-                    .stroke(Color.white.opacity(0.07), lineWidth: 11)
+                    .stroke(Color.white.opacity(0.058), lineWidth: 13)
                     .frame(width: 210)
-
-                // Progress fill — only visible while scanning
+                
+                // Fill
+                Circle()
+                    .trim(from: 0, to: scanner.isScanning ? progress : (scanner.scanResult != nil ? 1.0 : 1.0))
+                    .stroke(
+                        DS.ringGradient(for: scanner.totalJunkGB > 0 ? .junk : (scanner.scanResult != nil ? .clean : .idle)),
+                        style: StrokeStyle(lineWidth: 13, lineCap: .round)
+                    )
+                    .frame(width: 210)
+                    .rotationEffect(.degrees(-90))
+                    .shadow(color: (scanner.totalJunkGB > 0 ? T.warnGlow : T.accGlow), radius: 14)
+                    .animation(.easeInOut(duration: 0.35), value: progress)
+                
+                // Spinner (only while scanning)
                 if scanner.isScanning {
                     Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(
-                            AngularGradient(
-                                colors: [Color(hex: "#667eea"), Color(hex: "#a78bfa"), Color(hex: "#667eea")],
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 11, lineCap: .round)
-                        )
-                        .frame(width: 210)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 0.3), value: progress)
-
-                    // Spinning arc overlay
-                    Circle()
-                        .trim(from: 0, to: 0.18)
-                        .stroke(Color(hex: "#a78bfa").opacity(0.5), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .frame(width: 234)
+                        .trim(from: 0, to: 0.12) // match mockup spin arc
+                        .stroke(T.accLight.opacity(0.5), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 238)
                         .rotationEffect(.degrees(spinAngle))
                         .onAppear {
-                            withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                                 spinAngle = 360
                             }
                         }
-                } else {
-                    // Idle: full ring (static, no number)
-                    Circle()
-                        .trim(from: 0, to: 1.0)
-                        .stroke(
-                            AngularGradient(
-                                colors: [Color(hex: "#667eea"), Color(hex: "#a78bfa"), Color(hex: "#667eea")],
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 11, lineCap: .round)
-                        )
-                        .frame(width: 210)
-                        .rotationEffect(.degrees(-90))
                 }
-
-                // Inner filled circle
+                
+                // Inner Dark Fill
                 Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(hex: "#1e1e30"), Color(hex: "#0c0c12")],
-                            center: .center, startRadius: 0, endRadius: 90
-                        )
-                    )
-                    .frame(width: 180)
-
+                    .fill(RadialGradient(
+                        colors: [Color(hex: "#141424"), T.bgVoid],
+                        center: .center, startRadius: 0, endRadius: 86
+                    ))
+                    .frame(width: 172)
+                
                 // Center content
                 if scanner.isScanning {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 7) {
                         Text(String(format: "%.0f%%", progress * 100))
-                            .font(.system(size: 48, weight: .light, design: .rounded))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 52, weight: .light))
+                            .foregroundStyle(T.txt1)
+                            .kerning(-4)
                             .monospacedDigit()
-                            .contentTransition(.numericText())
-                            .animation(.easeInOut(duration: 0.2), value: progress)
-
-                        Text(scanner.currentScanTask)
-                            .font(.system(size: 9, weight: .medium))
-                            .kerning(0.8)
-                            .foregroundStyle(Color.white.opacity(0.4))
-                            .lineLimit(1)
-                            .frame(width: 140)
+                        
+                        Text(scanner.currentScanTask.lowercased())
+                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .foregroundStyle(T.txt3)
+                            .kerning(0.7)
                             .multilineTextAlignment(.center)
-                            .animation(.easeInOut, value: scanner.currentScanTask)
+                            .frame(maxWidth: 140)
                     }
                 }
-                // Idle: show nothing inside the ring (empty circle)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// MARK: - Results View (shown after scan finds junk)
+// MARK: - Results View
 struct ResultsView: View {
     let scanner: JunkScanner
     @Bindable var cleaner: JunkCleaner
@@ -287,50 +290,62 @@ struct ResultsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Back button row
+            // Overlay Header
             HStack {
                 Button(action: onBack) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 10, weight: .bold))
                         Text("Back")
                             .font(.system(size: 13, weight: .medium))
                     }
-                    .foregroundStyle(Color.white.opacity(0.55))
-                    .padding(.vertical, 6)
+                    .foregroundStyle(T.txt2)
                     .padding(.horizontal, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.05))
-                            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
-                    )
+                    .padding(.vertical, 5)
+                    .background(T.bgFloat)
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(T.borderMid, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-
+                
                 Spacer()
-
+                
                 if let result = scanner.scanResult {
-                    Text("\(result.items.count) items · \(String(format: "%.1f GB", scanner.totalJunkGB))")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.4))
+                    Text("\(result.items.count) items · \(result.formattedTotal) found")
+                        .font(.system(size: 11.5, weight: .regular, design: .monospaced))
+                        .foregroundStyle(T.txt3)
                 }
             }
-            .padding(.horizontal, 22)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 13)
+            .background(T.bgBase)
+            .overlay(alignment: .bottom) { Rectangle().fill(T.borderDim).frame(height: 1) }
 
-            // Success banner
-            if showResult {
-                SuccessBanner(cleaner: cleaner, showResult: $showResult)
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            // Junk list
             ScrollView {
-                JunkListSection(scanner: scanner)
+                VStack(spacing: 0) {
+                    // Success banner within scroll or at top
+                    if showResult {
+                        SuccessBanner(cleaner: cleaner, showResult: $showResult)
+                            .padding(.top, 8)
+                            .padding(.horizontal, 6)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
+                    JunkListSection(scanner: scanner)
+                        .padding(.top, 4)
+                }
             }
+            .scrollIndicators(.visible)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(T.bgBase)
+    }
+}
+
+extension ScanResult {
+    var formattedTotal: String {
+        let gb = Double(totalSize) / 1_073_741_824.0
+        if gb >= 1.0 { return String(format: "%.1f GB", gb) }
+        let mb = Double(totalSize) / 1_048_576.0
+        return String(format: "%.0f MB", mb)
     }
 }

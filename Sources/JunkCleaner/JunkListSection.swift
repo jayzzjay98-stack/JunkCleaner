@@ -11,19 +11,12 @@ struct JunkListSection: View {
                 if result.items.isEmpty {
                     EmptyResultState()
                 } else {
-                    Text("Found Items")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(DS.textTertiary)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 8)
                     JunkItemsList(items: result.items)
                 }
             } else {
                 EmptyIdleState()
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: scanner.isScanning)
-        .animation(.easeInOut(duration: 0.25), value: scanner.scanResult?.items.count ?? -1)
     }
 }
 
@@ -33,40 +26,29 @@ struct EmptyIdleState: View {
         VStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(DS.bgPrimary)
+                    .fill(T.bgRaised)
                     .frame(width: 56, height: 56)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18)
-                            .strokeBorder(DS.borderSubtle, lineWidth: 1)
-                    )
-                    .overlay(
-                        // Subtle gradient top edge
-                        RoundedRectangle(cornerRadius: 18)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [DS.violet.opacity(0.2), .clear],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
+                            .strokeBorder(T.borderDim, lineWidth: 1)
                     )
 
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(DS.textTertiary)
+                    .foregroundStyle(T.txt3)
             }
 
-            Text("Your Mac looks clean")
+            Text("Your Mac is ready")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(DS.textSecondary)
+                .foregroundStyle(T.txt2)
 
-            Text("Run a scan to detect junk files, caches,\nlogs, and leftover data that can be removed.")
+            Text("Run a scan to detect junk files, caches,\nand leftover data that can be removed.")
                 .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(DS.textTertiary)
+                .foregroundStyle(T.txt3)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
         }
-        .padding(.vertical, 28)
+        .padding(.vertical, 40)
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity)
     }
@@ -78,20 +60,20 @@ struct EmptyResultState: View {
         VStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(DS.successDim)
+                    .fill(T.ok.opacity(0.12))
                     .frame(width: 52, height: 52)
                 Image(systemName: "checkmark")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(DS.success)
+                    .foregroundStyle(T.ok)
             }
             Text("No junk files found!")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(DS.success)
+                .foregroundStyle(T.ok)
             Text("Your Mac is in great shape.")
                 .font(.system(size: 12))
-                .foregroundStyle(DS.textTertiary)
+                .foregroundStyle(T.txt3)
         }
-        .padding(.vertical, 28)
+        .padding(.vertical, 40)
         .frame(maxWidth: .infinity)
     }
 }
@@ -108,11 +90,11 @@ struct JunkItemsList: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(sorted.enumerated()), id: \.element.id) { idx, item in
-                JunkRow(item: item, rank: idx + 1, maxSize: maxSize)
+            ForEach(sorted) { item in
+                JunkRow(item: item, maxSize: maxSize)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.bottom, 8)
     }
 }
@@ -120,77 +102,60 @@ struct JunkItemsList: View {
 // MARK: - Single junk row
 struct JunkRow: View {
     let item: JunkItem
-    let rank: Int
     let maxSize: Int64
 
     @State private var hovering = false
     private var barFraction: Double { Double(item.sizeBytes) / Double(max(1, maxSize)) }
 
     var body: some View {
-        HStack(spacing: 10) {
-            // Icon
+        HStack(spacing: 11) {
+            // Icon (Emoji based on category from mockup)
             ZStack {
-                RoundedRectangle(cornerRadius: DS.radiusIcon)
-                    .fill(item.type.accentColor.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                Image(systemName: item.type.displayIcon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(item.type.accentColor)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(item.accentColor.opacity(0.11))
+                    .frame(width: 34, height: 34)
+                Text(item.emoji)
+                    .font(.system(size: 14))
             }
 
             // Name + category
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(item.displayName)
                     .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(DS.textPrimary)
+                    .foregroundStyle(T.txt1)
+                    .kerning(-0.15)
                     .lineLimit(1)
                 Text(item.type.rawValue)
-                    .font(.system(size: 10.5, weight: .regular))
-                    .foregroundStyle(DS.textTertiary)
+                    .font(.system(size: 10, weight: .regular, design: .monospaced))
+                    .foregroundStyle(T.txt3)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // Size + bar
-            VStack(alignment: .trailing, spacing: 5) {
+            VStack(alignment: .trailing, spacing: 4) {
                 Text(item.formattedSize)
-                    .font(.system(size: 11.5, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(DS.textSecondary)
+                    .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(T.txt2)
 
                 // Mini bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(DS.bgQuaternary)
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(
-                                LinearGradient(
-                                    colors: [item.type.accentColor, item.type.accentColor.opacity(0.6)],
-                                    startPoint: .leading, endPoint: .trailing
-                                )
-                            )
-                            .frame(width: max(3, geo.size.width * barFraction))
-                    }
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(T.bgHover)
+                        .frame(width: 44, height: 3)
+                    
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(item.accentColor.opacity(0.65))
+                        .frame(width: max(3, 44 * barFraction), height: 3)
                 }
-                .frame(width: 48, height: 3)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 9)
         .padding(.horizontal, 10)
         .background(
-            RoundedRectangle(cornerRadius: DS.radiusItem)
-                .fill(hovering ? DS.bgTertiary : Color.clear)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(hovering ? T.bgFloat : Color.clear)
         )
-        .animation(.easeInOut(duration: 0.12), value: hovering)
-        .onHover { h in hovering = h }
-        // Separator line
-        .overlay(alignment: .top) {
-            if rank > 1 {
-                Rectangle()
-                    .fill(DS.borderSubtle)
-                    .frame(height: 1)
-                    .padding(.leading, 56)
-            }
-        }
+        .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { hovering = h } }
     }
 }

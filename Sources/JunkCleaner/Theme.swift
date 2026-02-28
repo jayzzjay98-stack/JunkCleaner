@@ -1,81 +1,61 @@
 import SwiftUI
 
-
-
-// MARK: - Design Tokens (matching HTML exactly)
+// MARK: - Design Tokens (matching junkclean-mockup.html)
 enum T {
-    // Background gradient: #0f172a → #1e1b4b → #312e81
-    static let bg0 = Color(hex: "#0f172a")
-    static let bg1 = Color(hex: "#1e1b4b")
-    static let bg2 = Color(hex: "#312e81")
+    // Colors
+    static let bgVoid   = Color(hex: "#07070f")
+    static let bgBase   = Color(hex: "#0d0d1a")
+    static let bgRaised = Color(hex: "#121220")
+    static let bgFloat  = Color(hex: "#181828")
+    static let bgHover  = Color(hex: "#1e1e32")
 
-    // Primary purple
-    static let primary    = Color(hex: "#5211d4")
-    static let indigo500  = Color(hex: "#6366f1")
-    static let violet400  = Color(hex: "#a78bfa")
-    static let blue500    = Color(hex: "#3b82f6")
-    static let blue400    = Color(hex: "#60a5fa")
+    static let borderDim = Color.white.opacity(0.055)
+    static let borderMid = Color.white.opacity(0.09)
+    static let borderHi  = Color.white.opacity(0.14)
 
-    // Semantic
-    static let green400   = Color(hex: "#4ade80")
-    static let orange400  = Color(hex: "#fb923c")
-    static let cyan400    = Color(hex: "#22d3ee")
-    static let teal500    = Color(hex: "#14b8a6")
-    static let purple400  = Color(hex: "#c084fc")
-    static let pink500    = Color(hex: "#ec4899")
+    static let txt1 = Color(hex: "#f0efff")
+    static let txt2 = Color(hex: "#f0efff").opacity(0.52)
+    static let txt3 = Color(hex: "#f0efff").opacity(0.25)
+    static let txt4 = Color(hex: "#f0efff").opacity(0.13)
 
-    // Text
-    static let textWhite  = Color.white
-    static let textDim    = Color(hex: "#a5b4fc").opacity(0.6)   // indigo-200/60
-    static let textFaint  = Color(hex: "#a5b4fc").opacity(0.4)   // indigo-200/40
-    static let textMuted  = Color(hex: "#a5b4fc").opacity(0.5)
-    static let slate300   = Color(hex: "#cbd5e1")
+    static let acc       = Color(hex: "#7b68ee")
+    static let accLight  = Color(hex: "#9d90f5")
+    static let accDim    = Color(hex: "#7b68ee").opacity(0.18)
+    static let accGlow   = Color(hex: "#7b68ee").opacity(0.32)
 
-    // Glass surfaces (from HTML CSS)
-    static let glassBg     = Color(hex: "#1e1b4b").opacity(0.4)   // rgba(30,27,75,0.4)
-    static let glassBorder = Color.white.opacity(0.08)             // rgba(255,255,255,0.08)
-    static let glassSurface = Color.white.opacity(0.05)            // rgba(255,255,255,0.05)
-    static let glassHover  = Color.white.opacity(0.05)
+    static let ok        = Color(hex: "#3ec98e")
+    static let okGlow    = Color(hex: "#3ec98e").opacity(0.5)
+    static let warn      = Color(hex: "#f97316")
+    static let warnGlow  = Color(hex: "#f97316").opacity(0.5)
 
     // Gradients
+    static let accGrad = LinearGradient(
+        colors: [Color(hex: "#6c5ce7"), Color(hex: "#8b7cf8"), Color(hex: "#a78bfa")],
+        startPoint: .topLeading, endPoint: .bottomTrailing
+    )
+
     static let bgGradient = LinearGradient(
-        colors: [bg0, bg1, bg2],
+        colors: [bgVoid, bgBase],
         startPoint: .topLeading, endPoint: .bottomTrailing
     )
-    static let primaryGradient = LinearGradient(
-        colors: [primary, blue500],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
-    static let cpuBarGradient = LinearGradient(
-        colors: [blue400, indigo500],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let memBarGradient = LinearGradient(
-        colors: [purple400, pink500],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let diskBarGradient = LinearGradient(
-        colors: [cyan400, teal500],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let glassButtonGradient = LinearGradient(
-        colors: [Color.white.opacity(0.10), Color.white.opacity(0.05)],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
+
+    // Common Glass Background used for panels
+    static let glassBg = bgRaised.opacity(0.8) // Approximation of raised surface
 }
 
-// MARK: - Glass Panel (matches .glass-panel in HTML)
+// MARK: - Glass Panel Modifier
 struct GlassPanel: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(T.glassBg)
+                    .fill(T.bgRaised)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(T.glassBorder, lineWidth: 1)
+                            .strokeBorder(T.borderMid, lineWidth: 1)
                     )
             )
+            .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
     }
 }
 

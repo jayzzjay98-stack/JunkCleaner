@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JunkClean – UI Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Colors — same purple palette, refined */
+  --bg-void:    #07070f;
+  --bg-base:    #0d0d1a;
+  --bg-raised:  #121220;
+  --bg-float:   #181828;
+  --bg-hover:   #1e1e32;
+  --border-dim: rgba(255,255,255,0.055);
+  --border-mid: rgba(255,255,255,0.09);
+  --border-hi:  rgba(255,255,255,0.14);
+
+  --txt-1: #f0efff;
+  --txt-2: rgba(240,239,255,0.52);
+  --txt-3: rgba(240,239,255,0.25);
+  --txt-4: rgba(240,239,255,0.13);
+
+  /* Accent — the purple from screenshot */
+  --acc:        #7b68ee;
+  --acc-light:  #9d90f5;
+  --acc-dim:    rgba(123,104,238,0.18);
+  --acc-glow:   rgba(123,104,238,0.32);
+  --acc-grad:   linear-gradient(135deg, #6c5ce7 0%, #8b7cf8 50%, #a78bfa 100%);
+
+  --ok:         #3ec98e;
+  --ok-glow:    rgba(62,201,142,0.5);
+  --warn:       #f97316;
+  --warn-glow:  rgba(249,115,22,0.5);
+
+  /* Font */
+  --font: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'Geist Mono', 'SF Mono', monospace;
+}
+
+html, body {
+  background: #030308;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── WRAPPER ─────────────────────────────────────────────────── */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+/* ── WINDOW ──────────────────────────────────────────────────── */
+.win {
+  width: 900px;
+  height: 620px;
+  background: var(--bg-base);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  border: 1px solid var(--border-mid);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.65),
+    0 60px 120px rgba(0,0,0,0.72),
+    0 20px 48px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.045);
+  position: relative;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────── */
+.sidebar {
+  width: 232px;
+  min-width: 232px;
+  background: var(--bg-raised);
+  border-right: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-top { padding: 18px 18px 0; }
+
+/* Traffic lights */
+.tlights {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.tl {
+  width: 12px; height: 12px; border-radius: 50%;
+  cursor: pointer;
+  transition: filter .15s, transform .15s;
+}
+.tl:hover { filter: brightness(1.15); transform: scale(1.1); }
+.tl-r { background: #ff5f57; box-shadow: 0 0 6px rgba(255,95,87,.5); }
+.tl-y { background: #febc2e; box-shadow: 0 0 6px rgba(254,188,46,.5); }
+.tl-g { background: #28c840; box-shadow: 0 0 6px rgba(40,200,64,.5); }
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 28px;
+}
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--acc-grad);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 16px var(--acc-glow);
+  flex-shrink: 0;
+}
+.logo-icon svg { width: 18px; height: 18px; color: #fff; }
+.logo-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--txt-1);
+  letter-spacing: -0.5px;
+}
+
+/* Nav */
+.nav { padding: 0 10px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 13px; border-radius: 9px; cursor: pointer;
+  color: var(--txt-2);
+  font-size: 13.5px; font-weight: 500;
+  letter-spacing: -0.15px;
+  transition: background .13s, color .13s;
+  border: 1px solid transparent;
+}
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+.nav-item:hover {
+  background: rgba(255,255,255,0.038);
+  color: var(--txt-1);
+}
+.nav-item.active {
+  background: var(--acc-dim);
+  color: var(--txt-1);
+  border-color: rgba(123,104,238,0.28);
+}
+.nav-item.active svg { opacity: 1; color: var(--acc-light); }
+
+.sb-gap { flex: 1; }
+.sb-bot {
+  border-top: 1px solid var(--border-dim);
+  padding: 6px 10px 16px;
+}
+
+/* ── MAIN ────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  height: 64px;
+  padding: 0 28px;
+  display: flex; align-items: center;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+.header h1 {
+  font-size: 19px;
+  font-weight: 300;
+  color: var(--txt-1);
+  letter-spacing: -0.5px;
+}
+.header-sub {
+  font-size: 11.5px;
+  color: var(--txt-3);
+  margin-top: 1px;
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
+/* Body */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Status row */
+.status-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 26px 6px;
+  flex-shrink: 0;
+}
+.badge {
+  background: var(--bg-float);
+  border: 1px solid var(--border-dim);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+.badge-lbl {
+  font-size: 8.5px; font-weight: 600;
+  letter-spacing: 1.3px; text-transform: uppercase;
+  color: var(--txt-3); margin-bottom: 2px;
+}
+.badge-val {
+  font-size: 14px; font-weight: 600;
+  color: var(--txt-1); letter-spacing: -0.3px;
+}
+.pill {
+  background: var(--bg-float);
+  border: 1px solid var(--border-dim);
+  border-radius: 999px;
+  padding: 8px 16px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 500;
+  color: var(--txt-1); letter-spacing: -0.2px;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+  transition: background .3s, box-shadow .3s;
+}
+.dot.ok   { background: var(--ok);   box-shadow: 0 0 8px var(--ok-glow);   animation: pulse 2.4s ease-in-out infinite; }
+.dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn-glow); animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.85)} }
+
+/* ── RING SECTION ─────────────────────────────────────────────── */
+.ring-area {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+
+/* Atmospheric glow */
+.glow {
+  position: absolute;
+  width: 420px; height: 420px; border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(123,104,238,.14) 0%,
+    rgba(91,63,216,.07)  40%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* The SVG ring */
+.ring-svg { position: relative; z-index: 1; display: block; }
+
+.r-dec  { fill:none; stroke:rgba(255,255,255,.022); stroke-width:1; }
+.r-trk  { fill:none; stroke:rgba(255,255,255,.058); stroke-width:13; }
+.r-fill {
+  fill:none; stroke-width:13; stroke-linecap:round;
+  transform-origin:center; transform: rotate(-90deg);
+  stroke-dasharray: 659; stroke-dashoffset: 0;
+  transition: stroke-dashoffset .35s ease, stroke .35s ease;
+  filter: drop-shadow(0 0 14px rgba(123,104,238,.55));
+}
+.r-spin {
+  fill:none; stroke-width:3; stroke-linecap:round;
+  transform-origin:center; transform: rotate(-90deg);
+  stroke-dasharray: 72 587;
+  animation: ringspin 1.5s linear infinite;
+  opacity: .5; display:none;
+}
+@keyframes ringspin { to { transform: rotate(270deg); } }
+
+/* Center text */
+.ring-ctr {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  pointer-events:none; z-index:2;
+}
+.ring-pct {
+  font-size: 52px; font-weight: 300;
+  color: var(--txt-1); letter-spacing: -4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  display: none;
+  font-family: var(--font);
+}
+.ring-task {
+  font-size: 9px; font-weight: 500;
+  letter-spacing: .7px;
+  color: var(--txt-3);
+  margin-top: 7px;
+  text-align: center; max-width: 140px; line-height: 1.5;
+  display: none;
+  font-family: var(--mono);
+}
+
+/* ── ACTION BAR ──────────────────────────────────────────────── */
+.action-bar {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-dim);
+  padding: 12px 18px 16px;
+  display: flex; gap: 10px;
+  background: var(--bg-raised);
+}
+.btn {
+  flex: 1; height: 46px; border-radius: 11px;
+  border: none; cursor: pointer;
+  font-family: var(--font);
+  font-size: 13.5px; font-weight: 500;
+  letter-spacing: -0.2px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: all .15s;
+}
+.btn svg { width: 14px; height: 14px; }
+
+.btn-scan {
+  background: var(--bg-hover);
+  color: var(--txt-2);
+  border: 1px solid var(--border-mid);
+}
+.btn-scan:hover {
+  background: var(--bg-float);
+  color: var(--txt-1);
+  border-color: var(--border-hi);
+}
+
+.btn-clean {
+  background: var(--acc-grad);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 3px 18px var(--acc-glow);
+  opacity: .3;
+  cursor: not-allowed;
+}
+.btn-clean.ready {
+  opacity: 1;
+  cursor: pointer;
+}
+.btn-clean.ready:hover {
+  box-shadow: 0 6px 26px rgba(123,104,238,.55);
+  transform: translateY(-1px);
+}
+
+/* ── RESULTS OVERLAY ─────────────────────────────────────────── */
+.overlay {
+  position: absolute; inset: 0;
+  background: var(--bg-base);
+  display: none; flex-direction: column;
+  z-index: 10;
+}
+.overlay.show { display: flex; }
+
+.ov-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px 10px;
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg-float);
+  border: 1px solid var(--border-mid);
+  border-radius: 7px; padding: 5px 12px;
+  color: var(--txt-2);
+  font-family: var(--font);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all .13s; letter-spacing: -.1px;
+}
+.back-btn:hover { background: var(--bg-hover); color: var(--txt-1); }
+
+.ov-meta { font-size: 11.5px; color: var(--txt-3); font-family: var(--mono); }
+
+/* Junk scroll */
+.junk-scroll {
+  flex: 1; overflow-y: auto; padding: 4px 10px;
+}
+.junk-scroll::-webkit-scrollbar { width: 3px; }
+.junk-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.07); border-radius: 2px; }
+
+.jrow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 10px; border-radius: 8px; cursor: default;
+  transition: background .12s;
+}
+.jrow:hover { background: var(--bg-float); }
+.jico {
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.jinfo { flex: 1; min-width: 0; }
+.jname {
+  font-size: 12.5px; font-weight: 500; color: var(--txt-1);
+  letter-spacing: -.15px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.jtype { font-size: 10px; color: var(--txt-3); margin-top: 1px; font-family: var(--mono); }
+.jsize {
+  font-size: 11.5px; font-weight: 500; color: var(--txt-2);
+  text-align: right; font-family: var(--mono);
+}
+.jbar { width: 44px; height: 3px; background: var(--bg-hover); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.jbar-fill { height: 100%; border-radius: 2px; opacity: .65; }
+
+/* Success banner */
+.success-banner {
+  margin: 8px 18px 2px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  background: rgba(62,201,142,.08);
+  border: 1px solid rgba(62,201,142,.18);
+  display: flex; align-items: center; gap: 11px;
+}
+.success-icon {
+  width: 30px; height: 30px; border-radius: 7px;
+  background: rgba(62,201,142,.14);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 13px;
+}
+.success-title { font-size: 13px; font-weight: 600; color: var(--ok); letter-spacing: -.2px; }
+.success-sub   { font-size: 10.5px; color: var(--txt-3); margin-top: 1px; font-family: var(--mono); }
+
+/* ── SWITCHER ─────────────────────────────────────────────────── */
+.switcher {
+  display: flex; gap: 6px;
+}
+.sw {
+  padding: 5px 14px; border-radius: 7px;
+  font-size: 11.5px; font-weight: 500; cursor: pointer;
+  font-family: var(--font); letter-spacing: -.1px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.35);
+  transition: all .13s;
+}
+.sw:hover { color: rgba(255,255,255,.7); background: rgba(255,255,255,.07); }
+.sw.on { color: rgba(255,255,255,.85); background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.16); }
+
+.caption {
+  font-family: var(--mono);
+  font-size: 10.5px; color: rgba(255,255,255,.2);
+  text-align: center; margin-top: 6px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- WINDOW -->
+  <div class="win" id="win">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-top">
+        <div class="tlights">
+          <div class="tl tl-r"></div>
+          <div class="tl tl-y"></div>
+          <div class="tl tl-g"></div>
+        </div>
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4h6v2"/>
+            </svg>
+          </div>
+          <span class="logo-name">JunkClean</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
+          Junk Cleaner
+        </div>
+      </nav>
+
+      <div class="sb-gap"></div>
+
+      <div class="sb-bot">
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          Settings
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <!-- Header -->
+      <div class="header">
+        <div>
+          <h1>System Overview</h1>
+          <div class="header-sub">MacBook Air M4</div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="body">
+        <!-- Status row -->
+        <div class="status-row">
+          <div class="badge">
+            <div class="badge-lbl">Last Scan</div>
+            <div class="badge-val" id="scan-time">Never</div>
+          </div>
+          <div class="pill">
+            <div class="dot ok" id="status-dot"></div>
+            <span id="status-txt">System Optimal</span>
+          </div>
+        </div>
+
+        <!-- Ring -->
+        <div class="ring-area">
+          <div class="glow"></div>
+          <div style="position:relative;display:inline-block">
+            <svg class="ring-svg" width="272" height="272" viewBox="0 0 272 272">
+              <defs>
+                <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%"   stop-color="#6c5ce7"/>
+                  <stop offset="45%"  stop-color="#8b7cf8"/>
+                  <stop offset="100%" stop-color="#a78bfa"/>
+                </linearGradient>
+                <linearGradient id="rg-warn" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%"   stop-color="#f97316"/>
+                  <stop offset="100%" stop-color="#fbbf24"/>
+                </linearGradient>
+                <radialGradient id="ig" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%"   stop-color="#141424"/>
+                  <stop offset="100%" stop-color="#07070f"/>
+                </radialGradient>
+              </defs>
+              <!-- decorative circles -->
+              <circle cx="136" cy="136" r="125" class="r-dec"/>
+              <circle cx="136" cy="136" r="131" class="r-dec"/>
+              <!-- track -->
+              <circle cx="136" cy="136" r="105" class="r-trk"/>
+              <!-- fill -->
+              <circle cx="136" cy="136" r="105" class="r-fill" stroke="url(#rg)" id="ring-fill"
+                style="transform-origin:136px 136px"/>
+              <!-- spinner arc -->
+              <circle cx="136" cy="136" r="119" class="r-spin" stroke="#8b7cf8" id="ring-spin"
+                style="transform-origin:136px 136px"/>
+              <!-- inner dark fill -->
+              <circle cx="136" cy="136" r="86" fill="url(#ig)"/>
+            </svg>
+            <div class="ring-ctr">
+              <div class="ring-pct" id="ring-pct">0%</div>
+              <div class="ring-task" id="ring-task"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overlay: results -->
+        <div class="overlay" id="overlay">
+          <div class="ov-header">
+            <button class="back-btn" id="back-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              Back
+            </button>
+            <span class="ov-meta" id="ov-meta">8 items · 2.4 GB found</span>
+          </div>
+          <div id="banner-slot"></div>
+          <div class="junk-scroll" id="junk-list"></div>
+        </div>
+      </div><!-- /body -->
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <button class="btn btn-scan" id="scan-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          Scan
+        </button>
+        <button class="btn btn-clean" id="clean-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+          </svg>
+          Clean All
+        </button>
+      </div>
+    </div><!-- /main -->
+  </div><!-- /win -->
+
+  <!-- State switcher -->
+  <div>
+    <div class="switcher" id="switcher">
+      <button class="sw on" onclick="setState('idle',this)">Idle</button>
+      <button class="sw" onclick="setState('scanning',this)">Scanning</button>
+      <button class="sw" onclick="setState('results',this)">Results</button>
+      <button class="sw" onclick="setState('cleaned',this)">Cleaned</button>
+    </div>
+    <div class="caption">click to preview each state</div>
+  </div>
+</div>
+
+<script>
+const JUNK = [
+  { name:"Xcode DerivedData",  cat:"Developer Cache",  size:"1.2 GB", pct:100, color:"#7c6af7", ico:"🔨" },
+  { name:"System Caches",      cat:"System Junk",      size:"480 MB", pct:40,  color:"#f59e0b", ico:"💿" },
+  { name:"App Crash Reports",  cat:"Log Files",        size:"220 MB", pct:18,  color:"#ef4444", ico:"📄" },
+  { name:"Safari Cache",       cat:"Browser Cache",    size:"185 MB", pct:15,  color:"#818cf8", ico:"🌐" },
+  { name:"iOS Backups",        cat:"iOS Related",      size:"160 MB", pct:13,  color:"#06b6d4", ico:"📱" },
+  { name:"Old Downloads",      cat:"Downloads",        size:"140 MB", pct:12,  color:"#34d399", ico:"⬇️" },
+  { name:"Language Packs",     cat:"App Leftovers",    size:"80 MB",  pct:7,   color:"#a78bfa", ico:"🗂️" },
+  { name:"Mail Attachments",   cat:"Mail Cache",       size:"60 MB",  pct:5,   color:"#f97316", ico:"✉️" },
+];
+
+const TASKS = [
+  "scanning app leftovers","scanning system caches",
+  "scanning log files","scanning developer junk",
+  "scanning browser caches","scanning ios backups",
+];
+
+document.getElementById('junk-list').innerHTML = JUNK.map(j => `
+  <div class="jrow">
+    <div class="jico" style="background:${j.color}1c">${j.ico}</div>
+    <div class="jinfo">
+      <div class="jname">${j.name}</div>
+      <div class="jtype">${j.cat}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="jsize">${j.size}</div>
+      <div class="jbar"><div class="jbar-fill" style="width:${j.pct}%;background:${j.color}"></div></div>
+    </div>
+  </div>
+`).join('');
+
+let scanTimer = null;
+let currentState = 'idle';
+
+function setRing(offset) {
+  document.getElementById('ring-fill').style.strokeDashoffset = offset;
+}
+function setRingColor(warn) {
+  document.getElementById('ring-fill').setAttribute('stroke', warn ? 'url(#rg-warn)' : 'url(#rg)');
+  document.getElementById('ring-fill').style.filter = warn
+    ? 'drop-shadow(0 0 14px rgba(249,115,22,.5))'
+    : 'drop-shadow(0 0 14px rgba(123,104,238,.55))';
+}
+function showRing(show) {
+  document.getElementById('ring-fill').style.display = show ? '' : 'none';
+}
+function showSpin(show) {
+  document.getElementById('ring-spin').style.display = show ? '' : 'none';
+}
+function showPct(show, val) {
+  const el = document.getElementById('ring-pct');
+  el.style.display = show ? '' : 'none';
+  if (val !== undefined) el.textContent = val + '%';
+}
+function showTask(show, txt) {
+  const el = document.getElementById('ring-task');
+  el.style.display = show ? '' : 'none';
+  if (txt !== undefined) el.textContent = txt;
+}
+function showOverlay(show) {
+  document.getElementById('overlay').classList.toggle('show', show);
+}
+function setStatus(ok) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-txt');
+  dot.className = 'dot ' + (ok ? 'ok' : 'warn');
+  txt.textContent = ok ? 'System Optimal' : 'Junk Found';
+}
+function setClean(ready) {
+  document.getElementById('clean-btn').classList.toggle('ready', ready);
+}
+function setScanTime(t) { document.getElementById('scan-time').textContent = t; }
+function clearBanner()  { document.getElementById('banner-slot').innerHTML = ''; }
+
+function resetState() {
+  clearInterval(scanTimer);
+  showRing(true);
+  setRing(0);
+  setRingColor(false);
+  showSpin(false);
+  showPct(false);
+  showTask(false);
+  showOverlay(false);
+  setStatus(true);
+  setClean(false);
+  setScanTime('Never');
+  clearBanner();
+}
+
+function runScan(onDone) {
+  let pct = 0;
+  setRing(659);
+  showSpin(true);
+  showPct(true, 0);
+  showTask(true, TASKS[0]);
+  setScanTime('Just now');
+
+  scanTimer = setInterval(() => {
+    pct = Math.min(pct + 1.6, 100);
+    setRing(659 - 659 * pct / 100);
+    showPct(true, Math.round(pct));
+    showTask(true, TASKS[Math.floor(pct / 18) % TASKS.length]);
+    if (pct >= 100) {
+      clearInterval(scanTimer);
+      showSpin(false);
+      showPct(false);
+      showTask(false);
+      setTimeout(onDone, 250);
+    }
+  }, 28);
+}
+
+function setState(s, btn) {
+  if (btn) {
+    document.querySelectorAll('.sw').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  currentState = s;
+  resetState();
+
+  if (s === 'idle') return;
+
+  if (s === 'scanning') {
+    runScan(() => {
+      // auto-advance to results after scan
+      const btns = document.querySelectorAll('.sw');
+      btns.forEach((b,i) => b.classList.toggle('on', i===2));
+      setState('results');
+    });
+    return;
+  }
+
+  if (s === 'results') {
+    showRing(false);
+    showOverlay(true);
+    setStatus(false);
+    setClean(true);
+    setScanTime('Just now');
+    return;
+  }
+
+  if (s === 'cleaned') {
+    showRing(false);
+    showOverlay(true);
+    setStatus(true);
+    setScanTime('Just now');
+    document.getElementById('banner-slot').innerHTML = `
+      <div class="success-banner">
+        <div class="success-icon">✓</div>
+        <div>
+          <div class="success-title">Freed 2.4 GB</div>
+          <div class="success-sub">120 files deleted · system is clean</div>
+        </div>
+      </div>`;
+    return;
+  }
+}
+
+// Buttons
+document.getElementById('scan-btn').addEventListener('click', () => {
+  const btns = document.querySelectorAll('.sw');
+  btns.forEach((b,i) => b.classList.toggle('on', i===1));
+  setState('scanning');
+});
+
+document.getElementById('clean-btn').addEventListener('click', () => {
+  if (!document.getElementById('clean-btn').classList.contains('ready')) return;
+  const btns = document.querySelectorAll('.sw');
+  btns.forEach((b,i) => b.classList.toggle('on', i===3));
+  setState('cleaned');
+});
+
+document.getElementById('back-btn').addEventListener('click', () => {
+  const btns = document.querySelectorAll('.sw');
+  btns.forEach((b,i) => b.classList.toggle('on', i===0));
+  setState('idle');
+});
+</script>
+</body>
+</html>
